@@ -941,6 +941,8 @@ public:
 	 */
 	void SetDeathTimer(int t = 36);
 
+	bool GetPreDeath();
+	void SetPreDeath(bool b);
 
 protected:
 
@@ -990,7 +992,8 @@ protected:
 	FlashData flash;
 
 	bool lockDirection = false;
-	
+
+	bool pre_death;
 };
 
 inline Color Game_Battler::GetFlashColor() const {
@@ -1197,5 +1200,11 @@ inline int Game_Battler::GetDeathTimer() const {
 
 inline void Game_Battler::SetDeathTimer(int t) {
 	death_timer = t;
+}
+inline bool Game_Battler::GetPreDeath() {
+	return pre_death;
+}
+inline void Game_Battler::SetPreDeath(bool b) {
+	pre_death = b;
 }
 #endif

@@ -79,7 +79,10 @@ public:
 	 **/
 	void SetInvert(bool inverted);
 
+
 	void BattleAnimation::SetUseBattlerOpacity(bool b);
+
+	Game_Battler* source;
 
 protected:
 
@@ -127,7 +130,7 @@ protected:
 // For playing animations against a (group of) battlers in battle.
 class BattleAnimationBattle : public BattleAnimation {
 public:
-	BattleAnimationBattle(const lcf::rpg::Animation& anim, std::vector<Game_Battler*> battlers, bool only_sound = false, int cutoff_frame = -1, bool set_invert = false);
+	BattleAnimationBattle(const lcf::rpg::Animation& anim, std::vector<Game_Battler*> battlers, bool only_sound = false, int cutoff_frame = -1, bool set_invert = false, Game_Battler* source = NULL);
 	void Draw(Bitmap& dst) override;
 protected:
 	void FlashTargets(int r, int g, int b, int p) override;
