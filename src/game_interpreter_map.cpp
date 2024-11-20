@@ -1161,6 +1161,9 @@ bool Game_Interpreter_Map::CommandSetCustomMenu(lcf::rpg::EventCommand const& co
 			if (str.size() > 3) {
 				CustomMenu::parallax_y = atoi(str[3].c_str());
 			}
+			if (str.size() > 4) {
+				CustomMenu::callEventID = atoi(str[4].c_str());
+			}
 			// Output::Debug("{}/{}", str[0], str[1]);
 
 		}

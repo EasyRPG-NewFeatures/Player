@@ -80,6 +80,8 @@ namespace CustomMenu {
 	extern int parallax_x;
 	extern int parallax_y;
 
+	extern int callEventID;
+
 	extern bool used;
 
 	extern std::string commands[16];
@@ -103,6 +105,8 @@ public:
 	void Continue(SceneType prev_scene) override;
 	void CreateCustomWindows();
 	void vUpdate() override;
+
+	void callCommonEvent();
 
 	/**
 	 * Creates the window displaying the options.
