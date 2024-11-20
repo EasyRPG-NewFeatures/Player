@@ -67,8 +67,7 @@ void Game_CommonEvent::ForceCreate(int ce_ID) {
 	auto* ce = lcf::ReaderUtil::GetElement(lcf::Data::commonevents, ce_ID);
 
 	{
-		if (!interpreter)
-			interpreter.reset(new Game_Interpreter_Map());
+		interpreter.reset(new Game_Interpreter_Map());
 		interpreter->Push(this);
 	}
 }

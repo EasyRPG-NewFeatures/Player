@@ -41,6 +41,7 @@
 #include "game_switches.h"
 #include "game_map.h"
 #include "scene_item_custom.h"
+#include <lcf/reader_util.h>
 
 constexpr int menu_command_width = 88;
 constexpr int gold_window_width = 88;
@@ -61,6 +62,8 @@ namespace CustomMenu {
 
 	bool customCommands = false;
 
+	int callEventID = -1;
+
 	std::string commands[16] = {""};
 }
 
@@ -71,8 +74,24 @@ Scene_Menu_Custom::Scene_Menu_Custom(int menu_index) :
 		SetUseSharedDrawables(true);
 }
 
+void Scene_Menu_Custom::callCommonEvent() {
+	int eventID = CustomMenu::callEventID;
+	// Call common event
+	Game_CommonEvent* common_event = lcf::ReaderUtil::GetElement(Game_Map::GetCommonEvents(), eventID);
+	if (!common_event) {
+		Output::Warning("CallEvent: Can't call invalid common event {}", eventID);
+	}
+	else {
+		//Game_Map::GetInterpreter().Push(common_event);
+		common_event->ForceCreate(eventID);
+		common_event->ForceUpdate(true);
+	}
+}
+
 void Scene_Menu_Custom::Start() {
 	CreateCommandWindow();
+
+	callCommonEvent();
 
 	BitmapRef system2 = Cache::System2();
 	if (!system2) {
@@ -210,6 +229,7 @@ void Scene_Menu_Custom::CreateCustomWindows() {
 void Scene_Menu_Custom::Continue(SceneType /* prev_scene */) {
 	menustatus_window->Refresh();
 	gold_window->Refresh();
+	callCommonEvent();
 }
 
 void Scene_Menu_Custom::vUpdate() {
