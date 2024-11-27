@@ -477,7 +477,7 @@ std::string Game_CustomBattle::parseExpression(const string& expression, const G
 
 	sub_string = chaine;
 
-	std::regex reg1("([ab])\\.((atk)*(def)*(int)*(agi)*(hp)*(mhp)*(mp)*(mmp)*(lvl)*(exp)*(id)*(isactor)*(isenemy)*)");
+	std::regex reg1("([ab])\\.((atk)*(def)*(int)*(agi)*(hp)*(mhp)*(mp)*(mmp)*(lvl)*(exp)*(id)*(isactor)*(isenemy)*(isdefending)*)");
 	std::sregex_iterator it_reg(chaine.begin(), chaine.end(), reg1);
 	while (it_reg != end)
 	{
@@ -551,6 +551,14 @@ std::string Game_CustomBattle::parseExpression(const string& expression, const G
 					value = 1;
 				}
 			}
+
+			else if (param == "isdefending") {
+				value = 0;
+				if (btl->IsDefending()) {
+					value = 1;
+				}
+			}
+
 		}
 
 		sub_string = std::regex_replace(sub_string, std::regex(src + "." + param), to_string(value));
