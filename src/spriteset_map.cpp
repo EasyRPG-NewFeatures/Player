@@ -346,7 +346,15 @@ BitmapRef Spriteset_Map::GetEventSprite(int evid) {
 		}
 		if (setBmp) {
 			BitmapRef bitmap = character_sprites[i]->GetBitmap();
-			BitmapRef b = Bitmap::Create(24,32, Color(0, 0, 0, 0));
+			int DoomEventWidth = character_sprites[i]->GetWidth();
+			int DoomEventHeight = character_sprites[i]->GetHeight();
+			//BitmapRef b = Bitmap::Create(DoomEventWidth, DoomEventHeight, Color(0, 0, 0, 0));
+			BitmapRef b;
+			if (DoomEventWidth > 24 || DoomEventHeight > 32) {
+				b = Bitmap::Create(DoomEventWidth, DoomEventHeight, Color(0, 0, 0, 0));
+			}
+			else
+				b = Bitmap::Create(24, 32, Color(0, 0, 0, 0));
 			Rect r = character_sprites[i]->GetSrcRect();
 
 			// If it's not a tileSprite, and sprite isn't fixed, we need to calc the rotation
@@ -362,8 +370,8 @@ BitmapRef Spriteset_Map::GetEventSprite(int evid) {
 
 				int d = data[Main_Data::game_player->GetDirection() - 1][character_sprites[i]->GetCharacter()->GetDirection()];
 
-				r.y += d * 32;
-				r.y = r.y % (32 * 4);
+				r.y += d * DoomEventHeight;
+				r.y = r.y % (DoomEventHeight * 4);
 
 			}
 
@@ -371,7 +379,7 @@ BitmapRef Spriteset_Map::GetEventSprite(int evid) {
 				if (character_sprites[i]->GetCharacter()->GetSpriteIndex() > 0)
 					r.x += (character_sprites[i]->GetCharacter()->GetSpriteIndex() * 72) % 288;
 				if (character_sprites[i]->GetCharacter()->GetSpriteIndex() >= 4)
-					r.y += 128;
+					r.y += DoomEventHeight * 4;
 			}
 
 			b->Blit(0, 0, *bitmap, r, 255);
