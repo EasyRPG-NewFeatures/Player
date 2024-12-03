@@ -796,7 +796,6 @@ int TilemapLayer::GetTileDoom(int map_x, int map_y, int layer) {
 		// Check that block F is being drawn
 		if (tile.ID >= BLOCK_F && tile.ID < BLOCK_F + BLOCK_F_TILES) {
 			int id = substitutions[tile.ID - BLOCK_F];
-
 			// Get the tile coordinates from chipset
 			if (id < 48) {
 				// If from first column of the block
