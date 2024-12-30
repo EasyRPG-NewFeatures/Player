@@ -5062,18 +5062,113 @@ bool Game_Interpreter::CommandManiacCallCommand(lcf::rpg::EventCommand const& co
 
 	cmd.string = lcf::DBString(CommandStringOrVariableBitfield(com, 0, 3, 4));
 
-	int arr_begin = ValueOrVariableBitfield(com.parameters[0], 1, com.parameters[2]);
-	int arr_length = ValueOrVariableBitfield(com.parameters[0], 2, com.parameters[3]);
-
 	std::vector<int32_t> output_args;
-	if (arr_length > 0) {
-		output_args.reserve(arr_length);
-		for (int i = 0; i < arr_length; ++i) {
-			output_args.push_back(Main_Data::game_variables->Get(arr_begin + i));
+	int processing_mode = (com.parameters[0] >> 4) & 0b1111;
+
+	switch (processing_mode) {
+	case 0: case 1: { // Default mode - read from a sequence of game variables
+		int arr_begin = ValueOrVariableBitfield(com.parameters[0], 1, com.parameters[2]);
+		int arr_length = ValueOrVariableBitfield(com.parameters[0], 2, com.parameters[3]);
+
+		if (arr_length > 0) {
+			output_args.reserve(arr_length);
+			for (int i = 0; i < arr_length; ++i) {
+				output_args.push_back(Main_Data::game_variables->Get(arr_begin + i));
+			}
 		}
+		break;
+	}
+
+	case 3: { // Dynamic mode - read from its own parameters
+		struct DynamicArrayData {
+			int offset;
+			int length;
+			int flag;
+			std::vector<int32_t> values;
+			int interpretation_bits;
+			bool has_continuation;
+		};
+
+		DynamicArrayData arr_data = {};
+		arr_data.offset = com.parameters[2];
+		arr_data.length = com.parameters[3];
+		arr_data.flag = com.parameters[4];
+
+		// Read and process array values
+		output_args.reserve(arr_data.length);
+		arr_data.values.reserve(arr_data.length);
+
+		for (int i = 0; i < arr_data.length; i++) {
+			arr_data.values.push_back(com.parameters[5 + i]);
+		}
+
+		// Check if interpretation bits are provided
+		if (5 + arr_data.length < com.parameters.size()) {
+			arr_data.interpretation_bits = com.parameters[5 + arr_data.length];
+			output_args.reserve(arr_data.length);
+
+			for (int i = 0; i < arr_data.length; i++) {
+				int value = arr_data.values[i];
+				// Each value has its own mode bits in the interpretation_bits
+				int mode = (arr_data.interpretation_bits >> (i * 2)) & 0x3;
+				output_args.push_back(ValueOrVariable<true, true>(mode, value));
+			}
+		}
+		else {
+			// If no interpretation bits provided, treat all as direct values
+			output_args = arr_data.values;
+		}
+		break;
+	}
+
+	case 4: { // Expression mode - interprets its own parameters as Maniac Expressions
+
+		//TODO - LEARN HOW THIS ACTUALLY WORKS
+		break;
+
+		auto expression_params = MakeSpan(com.parameters).subspan(5);
+
+		// Based on the encoding pattern, each expression seems to be encoded separately 
+		// and the parameters are already split into the format ParseExpression expects
+		output_args.reserve(5); // Reserve space for typical expression array elements
+
+		// Find end of expressions (when encountering a value that breaks the pattern)
+		size_t param_count = expression_params.size();
+		size_t current_param = 0;
+
+		while (current_param < param_count) {
+			// Try to get all bytes until we hit the end or an invalid expression marker
+			auto remaining_params = MakeSpan(expression_params).subspan(current_param);
+
+			// ParseExpression will handle breaking down each parameter into bytes
+			int32_t result = ManiacPatch::ParseExpression(remaining_params, *this);
+			output_args.push_back(result);
+
+			// Move to next expression based on the pattern of bytes used
+			// Need to figure out exact number of parameters used by ParseExpression
+			current_param += 1; // This needs to be adjusted based on how many parameters each expression consumes
+		}
+		break;
+	}
+
+	default:
+		Output::Warning("Call Command - Processing Mode not supported: {} ", processing_mode);
+		break;
 	}
 
 	cmd.parameters = lcf::DBArray<int32_t>(output_args.begin(), output_args.end());
+
+	/*
+	// DEBUG OUTPUTS:
+	Output::Warning("Processing mode: {}", processing_mode);
+	Output::Info("");
+	Output::Warning("Command code: {}", cmd.code);
+	Output::Warning("Command string: {}", cmd.string);
+	std::string params_str = "";
+	for (int i = 0; i < cmd.parameters.size(); i++) params_str += " " + std::to_string(output_args[i]);
+	Output::Warning("Command parameters: {}", params_str);
+	Output::Info("--------------------\n");
+	*/
 
 	// Our implementation pushes a new frame containing the command instead of invoking it directly.
 	// This is incompatible to Maniacs but has a better compatibility with our code.
