@@ -42,4 +42,7 @@ namespace ManiacsBattle
 	bool GetForceSelectingActor();
 	void SetForceSelectingActor(bool b);
 
+	bool GetDisableCancelCommandSelection();
+	void SetDisableCancelCommandSelection(bool b);
+
 }

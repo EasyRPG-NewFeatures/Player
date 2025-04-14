@@ -71,9 +71,9 @@ public:
 
 	static std::optional<std::string> ManiacsCommandInserter(char ch, const char** iter, const char* end, uint32_t escape_char);
 	static std::optional<std::string> ManiacsCommandInserterHex(char ch, const char** iter, const char* end, uint32_t escape_char);
+	void Set(Str_Params params, StringView string);
 
 private:
-	void Set(Str_Params params, StringView string);
 	bool ShouldWarn(int id) const;
 	void WarnGet(int id) const;
 

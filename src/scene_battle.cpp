@@ -215,21 +215,21 @@ void Scene_Battle::CreateUi() {
 
 	options_window.reset(new Window_Command(commands, option_command_mov));
 	options_window->SetHeight(80);
-	options_window->SetX(Player::menu_offset_x);
-	options_window->SetY(Player::menu_offset_y + MENU_HEIGHT - 80);
+	options_window->SetX(Player::battle_offset_x);
+	options_window->SetY(Player::battle_offset_y + MENU_HEIGHT - 80);
 
-	help_window.reset(new Window_Help(Player::menu_offset_x, Player::menu_offset_y, MENU_WIDTH, 32));
+	help_window.reset(new Window_Help(Player::battle_offset_x, Player::battle_offset_y, MENU_WIDTH, 32));
 	help_window->SetVisible(false);
 
-	item_window.reset(new Window_Item(Player::menu_offset_x, (Player::menu_offset_y + MENU_HEIGHT - 80), MENU_WIDTH, 80));
+	item_window.reset(new Window_Item(Player::battle_offset_x, (Player::battle_offset_y + MENU_HEIGHT - 80), MENU_WIDTH, 80));
 	item_window->SetHelpWindow(help_window.get());
 	item_window->Refresh();
 	item_window->SetIndex(0);
 
-	skill_window.reset(new Window_BattleSkill(Player::menu_offset_x, (Player::menu_offset_y + MENU_HEIGHT - 80), MENU_WIDTH, 80));
+	skill_window.reset(new Window_BattleSkill(Player::battle_offset_x, (Player::battle_offset_y + MENU_HEIGHT - 80), MENU_WIDTH, 80));
 	skill_window->SetHelpWindow(help_window.get());
 
-	message_window.reset(new Window_Message(Player::menu_offset_x, (Player::menu_offset_y + MENU_HEIGHT - 80), MENU_WIDTH, 80));
+	message_window.reset(new Window_Message(Player::battle_offset_x, (Player::battle_offset_y + MENU_HEIGHT - 80), MENU_WIDTH, 80));
 	Game_Message::SetWindow(message_window.get());
 }
 
@@ -670,4 +670,50 @@ int Scene_Battle::GetTargetIndex() {
 	}
 
 	return v;
+}
+
+bool Scene_Battle::GetMenuOpen(std::string s, int &index, int &ID) {
+	ID = 0;
+	if (s == "All" || s == "Command") {
+		if (command_window->GetActive()) {
+			index = command_window->GetIndex();
+			return true;
+		}
+	}
+	if (s == "All" || s == "Item") {
+		if (item_window->GetActive()) {
+			index = item_window->GetIndex();
+			ID = item_window->GetItem()->ID;
+			return true;
+		}
+	}
+	if (s == "All" || s == "Skill") {
+		if (skill_window->GetActive()) {
+			index = skill_window->GetIndex();
+			ID = skill_window->GetSkill()->ID;
+			return true;
+		}
+	}
+	if (s == "All" || s == "Target") {
+		if (target_window->GetActive()) {
+			index = target_window->GetIndex();
+
+			std::vector<Game_Battler*> battlers;
+			Main_Data::game_enemyparty->GetActiveBattlers(battlers);
+			if (index < battlers.size()) {
+				Game_Enemy* e = (Game_Enemy*)battlers[index];
+				ID = Main_Data::game_enemyparty->GetEnemyPositionInParty(e);
+			}
+
+			return true;
+		}
+	}
+	if (s == "All" || s == "Status") {
+		if (status_window->GetActive()) {
+			index = status_window->GetIndex();
+			return true;
+		}
+	}
+
+	return false;
 }

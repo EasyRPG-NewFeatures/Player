@@ -102,6 +102,8 @@ public:
 	void SetAfterimageAmount(unsigned amount);
 	void DoAfterimageFade();
 
+	int GetAnimationState();
+
 protected:
 	void CreateSprite();
 	void OnMonsterSpriteReady(FileRequestResult* result);

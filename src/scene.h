@@ -266,7 +266,7 @@ public:
 	bool UsesSharedDrawables() const;
 
 	virtual void OnPartyChanged(Game_Actor* actor, bool add);
-	virtual void OnEventHpChanged(Game_Battler* battler, int hp);
+	virtual void OnEventHpChanged(Game_Battler* battler, int hp, bool miss = false);
 	virtual void OnTranslationChanged();
 
 protected:

@@ -81,9 +81,6 @@ private:
 	bool CommandManiacControlBattle(lcf::rpg::EventCommand const& com);
 	bool CommandManiacControlAtbGauge(lcf::rpg::EventCommand const& com);
 	bool CommandManiacChangeBattleCommandEx(lcf::rpg::EventCommand const& com);
-	bool CommandManiacGetBattleInfo(lcf::rpg::EventCommand const& com);
-
-	bool CommandGetTarget(lcf::rpg::EventCommand const& com);
 
 private:
 	Span<const lcf::rpg::TroopPage> pages;

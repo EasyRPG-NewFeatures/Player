@@ -303,10 +303,10 @@ void Scene_Battle_Rpg2k3::CreateUi() {
 	enemy_cursor.reset(new Sprite());
 
 	if (lcf::Data::battlecommands.battle_type == lcf::rpg::BattleCommands::BattleType_gauge) {
-		item_window->SetX(Player::menu_offset_x);
-		item_window->SetY(Player::menu_offset_y + 64);
-		skill_window->SetX(Player::menu_offset_x);
-		skill_window->SetY(Player::menu_offset_y + 64);
+		item_window->SetX(Player::battle_offset_x);
+		item_window->SetY(Player::battle_offset_y + 64);
+		skill_window->SetX(Player::battle_offset_x);
+		skill_window->SetY(Player::battle_offset_y + 64);
 	}
 
 	if (lcf::Data::battlecommands.battle_type != lcf::rpg::BattleCommands::BattleType_traditional) {
@@ -329,7 +329,7 @@ void Scene_Battle_Rpg2k3::CreateUi() {
 
 	if (lcf::Data::battlecommands.window_size == lcf::rpg::BattleCommands::WindowSize_small) {
 		int height = 68;
-		int y = Player::screen_height - Player::menu_offset_y - height;
+		int y = Player::screen_height - Player::battle_offset_y - height;
 
 		auto small_window = [&](auto& window) {
 			if (window) {
@@ -437,8 +437,8 @@ void Scene_Battle_Rpg2k3::UpdateAnimations() {
 				ally_cursor->SetSrcRect(Rect(sprite_frame * 16, 16, 16, 16));
 
 				ally_cursor->SetVisible(true);
-				ally_cursor->SetX(Player::menu_offset_x + actor->GetBattlePosition().x);
-				ally_cursor->SetY(Player::menu_offset_y + actor->GetBattlePosition().y - 40);
+				ally_cursor->SetX(Player::battle_offset_x + actor->GetBattlePosition().x);
+				ally_cursor->SetY(Player::battle_offset_y + actor->GetBattlePosition().y - 40);
 
 				if (frame_counter % 30 == 0) {
 					SelectionFlash(actor);
@@ -466,8 +466,8 @@ void Scene_Battle_Rpg2k3::UpdateAnimations() {
 					enemy_cursor->SetSrcRect(Rect(sprite_frame * 16, 0, 16, 16));
 
 					enemy_cursor->SetVisible(true);
-					enemy_cursor->SetX(Player::menu_offset_x + enemy->GetBattlePosition().x + sprite->GetWidth() / 2);
-					enemy_cursor->SetY(Player::menu_offset_y + enemy->GetBattlePosition().y);
+					enemy_cursor->SetX(Player::battle_offset_x + enemy->GetBattlePosition().x + sprite->GetWidth() / 2);
+					enemy_cursor->SetY(Player::battle_offset_y + enemy->GetBattlePosition().y);
 
 					std::vector<lcf::rpg::State*> ordered_states = enemy->GetInflictedStatesOrderedByPriority();
 					if (ordered_states.size() > 0) {
@@ -511,9 +511,9 @@ void Scene_Battle_Rpg2k3::DrawFloatText(int x, int y, int color, StringView text
 	floating_text->SetBitmap(graphic);
 	floating_text->SetOx(rect.width / 2);
 	floating_text->SetOy(rect.height + 5);
-	floating_text->SetX(Player::menu_offset_x + x);
+	floating_text->SetX(Player::battle_offset_x + x);
 	// Move 5 pixel down because the number "jumps" with the intended y as the peak
-	floating_text->SetY(Player::menu_offset_y + y + 5);
+	floating_text->SetY(Player::battle_offset_y + y + 5);
 	floating_text->SetZ(Priority_Window + y);
 
 	FloatText float_text;
@@ -547,8 +547,8 @@ void Scene_Battle_Rpg2k3::CreateBattleTargetWindow() {
 
 	target_window.reset(new Window_Command(std::move(commands), width, 4));
 	target_window->SetHeight(height);
-	target_window->SetX(Player::menu_offset_x);
-	target_window->SetY(Player::screen_height - Player::menu_offset_y - height);
+	target_window->SetX(Player::battle_offset_x);
+	target_window->SetY(Player::screen_height - Player::battle_offset_y - height);
 	// Above other windows
 	target_window->SetZ(Priority_Window + 10);
 
@@ -572,20 +572,20 @@ void Scene_Battle_Rpg2k3::RefreshTargetWindow() {
 void Scene_Battle_Rpg2k3::CreateBattleStatusWindow() {
 	int w = MENU_WIDTH;
 	int h = 80;
-	int x = Player::menu_offset_x;
-	int y = Player::screen_height - Player::menu_offset_y - h;
+	int x = Player::battle_offset_x;
+	int y = Player::screen_height - Player::battle_offset_y - h;
 
 	switch (lcf::Data::battlecommands.battle_type) {
 		case lcf::rpg::BattleCommands::BattleType_traditional:
-			x = Player::menu_offset_x + target_window->GetWidth();
+			x = Player::battle_offset_x + target_window->GetWidth();
 			w = MENU_WIDTH - target_window->GetWidth();
 			break;
 		case lcf::rpg::BattleCommands::BattleType_alternative:
-			x = Player::menu_offset_x + options_window->GetWidth();
+			x = Player::battle_offset_x + options_window->GetWidth();
 			w = MENU_WIDTH - options_window->GetWidth();
 			break;
 		case lcf::rpg::BattleCommands::BattleType_gauge:
-			x = Player::menu_offset_x + options_window->GetWidth();
+			x = Player::battle_offset_x + options_window->GetWidth();
 			// Default window too small for 4 actors
 			w = MENU_WIDTH;
 			break;
@@ -636,15 +636,15 @@ void Scene_Battle_Rpg2k3::CreateBattleCommandWindow() {
 	command_window->SetHeight(height);
 	switch (lcf::Data::battlecommands.battle_type) {
 		case lcf::rpg::BattleCommands::BattleType_traditional:
-			command_window->SetX(Player::menu_offset_x + target_window->GetWidth() - command_window->GetWidth());
-			command_window->SetY(Player::screen_height - Player::menu_offset_y - height);
+			command_window->SetX(Player::battle_offset_x + target_window->GetWidth() - command_window->GetWidth());
+			command_window->SetY(Player::screen_height - Player::battle_offset_y - height);
 			break;
 		case lcf::rpg::BattleCommands::BattleType_alternative:
-			command_window->SetX(Player::menu_offset_x + MENU_WIDTH);
-			command_window->SetY(Player::screen_height - Player::menu_offset_y - height);
+			command_window->SetX(Player::battle_offset_x + MENU_WIDTH);
+			command_window->SetY(Player::screen_height - Player::battle_offset_y - height);
 			break;
 		case lcf::rpg::BattleCommands::BattleType_gauge:
-			command_window->SetX(Player::menu_offset_x);
+			command_window->SetX(Player::battle_offset_x);
 			command_window->SetY(Player::screen_height / 2 - height / 2);
 			break;
 	}
@@ -1163,7 +1163,7 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionFi
 		target_window->SetIndex(-1);
 
 		if (lcf::Data::battlecommands.battle_type == lcf::rpg::BattleCommands::BattleType_traditional || ((std::find(battle_options.begin(), battle_options.end(), AutoBattle) == battle_options.end()) && !IsEscapeAllowedFromOptionWindow())) {
-			if (lcf::Data::battlecommands.battle_type != lcf::rpg::BattleCommands::BattleType_traditional) MoveCommandWindows(Player::menu_offset_x - options_window->GetWidth(), 1);
+			if (lcf::Data::battlecommands.battle_type != lcf::rpg::BattleCommands::BattleType_traditional) MoveCommandWindows(Player::battle_offset_x - options_window->GetWidth(), 1);
 			SetState(State_SelectActor);
 			return SceneActionReturn::eContinueThisFrame;
 		}
@@ -1193,7 +1193,7 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionFi
 		command_window->SetIndex(-1);
 
 		if (previous_state != State_Start) {
-			MoveCommandWindows(Player::menu_offset_x, 8);
+			MoveCommandWindows(Player::battle_offset_x, 8);
 		}
 
 		SetSceneActionSubState(eWaitInput);
@@ -1208,11 +1208,11 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionFi
 			switch (battle_options[options_window->GetIndex()]) {
 				case Battle: // Battle
 					Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Decision));
-					MoveCommandWindows(Player::menu_offset_x - options_window->GetWidth(), 8);
+					MoveCommandWindows(Player::battle_offset_x - options_window->GetWidth(), 8);
 					SetState(State_SelectActor);
 					break;
 				case AutoBattle: // Auto Battle
-					MoveCommandWindows(Player::menu_offset_x - options_window->GetWidth(), 8);
+					MoveCommandWindows(Player::battle_offset_x - options_window->GetWidth(), 8);
 					SetState(State_AutoBattle);
 					Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Decision));
 					break;
@@ -1246,7 +1246,14 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionAc
 		status_window->SetVisible(true);
 		command_window->SetIndex(-1);
 
-		if (lcf::Data::battlecommands.battle_type == lcf::rpg::BattleCommands::BattleType_traditional || ManiacsBattle::GetForceSelectingActor()) {
+		if (ManiacsBattle::GetForceSelectingActor()) {
+			status_window->SetChoiceMode(Window_BattleStatus::ChoiceMode_None);
+
+			SetSceneActionSubState(eWaitActor);
+			return SceneActionReturn::eContinueThisFrame;
+		}
+
+		if (lcf::Data::battlecommands.battle_type == lcf::rpg::BattleCommands::BattleType_traditional) {
 			status_window->SetChoiceMode(Window_BattleStatus::ChoiceMode_None);
 			target_window->SetVisible(true);
 
@@ -1459,7 +1466,7 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionCo
 			return SceneActionReturn::eWaitTillNextFrame;
 		}
 		if (lcf::Data::battlecommands.battle_type != lcf::rpg::BattleCommands::BattleType_traditional) {
-			if (Input::IsTriggered(Input::CANCEL) && !ManiacsBattle::GetForceSelectingActor()) {
+			if (Input::IsTriggered(Input::CANCEL) && !ManiacsBattle::GetDisableCancelCommandSelection()) {
 
 				Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Cancel));
 				SetState(State_SelectOption);
@@ -2972,12 +2979,48 @@ void Scene_Battle_Rpg2k3::OnPartyChanged(Game_Actor* actor, bool added) {
 			});
 }
 
-void Scene_Battle_Rpg2k3::OnEventHpChanged(Game_Battler* battler, int hp) {
-	DrawFloatText(
-			battler->GetBattlePosition().x,
-			battler->GetBattlePosition().y,
-			hp < 0 ? Font::ColorDefault : Font::ColorHeal,
-			std::to_string(std::abs(hp)));
+void Scene_Battle_Rpg2k3::OnEventHpChanged(Game_Battler* battler, int hp, bool miss) {
+	int CE_ID = ManiacsBattle::Get_DamageCE();
+	int Var_ID = ManiacsBattle::Get_DamageVar();
+	if (CE_ID > 0) {
+		Main_Data::game_variables->Set(Var_ID + 4, 0);
+		Main_Data::game_variables->Set(Var_ID + 5, 0);
+		if (battler->GetType() == Game_Battler::Type_Enemy) {
+			Main_Data::game_variables->Set(Var_ID, 1);
+			auto* enemy = static_cast<Game_Enemy*>(battler);
+			Main_Data::game_variables->Set(Var_ID + 1, enemy->GetTroopMemberId() - 1);
+		}
+		else {
+			Main_Data::game_variables->Set(Var_ID, 0);
+			Main_Data::game_variables->Set(Var_ID + 1, Main_Data::game_party->GetActorPositionInParty(battler->GetId()));
+		}
+
+		Main_Data::game_variables->Set(Var_ID + 2, battler->GetBattlePosition().x + 35);
+		Main_Data::game_variables->Set(Var_ID + 3, battler->GetBattlePosition().y);
+
+		Main_Data::game_variables->Set(Var_ID + 4, hp < 0 ? 0 : 1);
+		Main_Data::game_variables->Set(Var_ID + 5, std::abs(hp));
+
+		auto ce = Game_Battle::StartCommonEventID(CE_ID);
+		ce->UpdateBattle(true, CE_ID);
+	}
+	else {
+		if (miss) {
+			DrawFloatText(
+				battler->GetBattlePosition().x,
+				battler->GetBattlePosition().y,
+				0,
+				lcf::Data::terms.miss);
+		}
+		else {
+			DrawFloatText(
+				battler->GetBattlePosition().x,
+				battler->GetBattlePosition().y,
+				hp < 0 ? Font::ColorDefault : Font::ColorHeal,
+				std::to_string(std::abs(hp)));
+		}
+	}
+
 }
 
 void Scene_Battle_Rpg2k3::RecreateSpWindow(Game_Battler* battler) {
@@ -2987,7 +3030,7 @@ void Scene_Battle_Rpg2k3::RecreateSpWindow(Game_Battler* battler) {
 	if (battler && battler->MaxSpValue() >= 1000) {
 		spwindow_size = 72;
 	}
-	sp_window = std::make_unique<Window_ActorSp>(Player::screen_width - Player::menu_offset_x - spwindow_size, (small_window ? Player::menu_offset_y + 154 : Player::menu_offset_y + 136), spwindow_size, spwindow_height);
+	sp_window = std::make_unique<Window_ActorSp>(Player::screen_width - Player::battle_offset_x - spwindow_size, (small_window ? Player::battle_offset_y + 154 : Player::battle_offset_y + 136), spwindow_size, spwindow_height);
 	sp_window->SetVisible(false);
 	sp_window->SetBorderY(small_window ? 2 : 8);
 	sp_window->SetContents(Bitmap::Create(sp_window->GetWidth() - sp_window->GetBorderX() / 2, sp_window->GetHeight() - sp_window->GetBorderY() * 2));

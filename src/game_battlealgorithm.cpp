@@ -443,6 +443,8 @@ void Game_BattleAlgorithm::AlgorithmBase::Start() {
 			}
 		}
 
+		customTargets.clear();
+
 		// Actions Var
 
 		Game_CommonEvent* ce = Game_Battle::StartCommonEventID(CE_ID);
@@ -510,7 +512,24 @@ void Game_BattleAlgorithm::AlgorithmBase::Start() {
 			}
 		}
 
+
+		if (target_type == -2) {
+			// Test
+			auto* target = GetOriginalTargets().back();
+			int i = 0;
+			for (auto b : customTargets) {
+				if (i == 0)
+					AddTarget(b, true);
+				else
+					AddTarget(b, false);
+				i++;
+			}
+		}
 	}
+}
+
+void Game_BattleAlgorithm::AlgorithmBase::SetStringVarTarget(std::vector<Game_Battler*> targets) {
+	customTargets = targets;
 }
 
 bool Game_BattleAlgorithm::AlgorithmBase::vStart() {
@@ -677,6 +696,12 @@ Game_BattleAlgorithm::Normal::Normal(Game_Battler* source, Game_Battler* target,
 }
 
 Game_BattleAlgorithm::Normal::Normal(Game_Battler* source, Game_Party_Base* target, int hits_multiplier, Style style) :
+	AlgorithmBase(Type::Normal, source, target), hits_multiplier(hits_multiplier)
+{
+	Init(style);
+}
+
+Game_BattleAlgorithm::Normal::Normal(Game_Battler* source, std::vector<Game_Battler*> target, int hits_multiplier, Style style) :
 	AlgorithmBase(Type::Normal, source, target), hits_multiplier(hits_multiplier)
 {
 	Init(style);
@@ -984,6 +1009,12 @@ Game_BattleAlgorithm::Skill::Skill(Game_Battler* source, Game_Battler* target, c
 }
 
 Game_BattleAlgorithm::Skill::Skill(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::Skill& skill, const lcf::rpg::Item* item) :
+	AlgorithmBase(Type::Skill, source, target), skill(skill), item(item)
+{
+	Init();
+}
+
+Game_BattleAlgorithm::Skill::Skill(Game_Battler* source, std::vector<Game_Battler*> target, const lcf::rpg::Skill& skill, const lcf::rpg::Item* item) :
 	AlgorithmBase(Type::Skill, source, target), skill(skill), item(item)
 {
 	Init();
@@ -1387,6 +1418,11 @@ Game_BattleAlgorithm::Item::Item(Game_Battler* source, Game_Battler* target, con
 Game_BattleAlgorithm::Item::Item(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::Item& item) :
 	AlgorithmBase(Type::Item, source, target), item(item) {
 		// no-op
+}
+
+Game_BattleAlgorithm::Item::Item(Game_Battler* source, std::vector<Game_Battler*> target, const lcf::rpg::Item& item) :
+	AlgorithmBase(Type::Item, source, target), item(item) {
+	// no-op
 }
 
 bool Game_BattleAlgorithm::Item::vStart() {

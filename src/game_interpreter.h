@@ -289,8 +289,23 @@ protected:
 	bool CommandManiacSetGameOption(lcf::rpg::EventCommand const& com);
 	bool CommandManiacControlStrings(lcf::rpg::EventCommand const& com);
 	bool CommandManiacCallCommand(lcf::rpg::EventCommand const& com);
+	bool CommandManiacGetBattleInfo(lcf::rpg::EventCommand const& com);
 
+	bool CommandGetTarget(lcf::rpg::EventCommand const& com);
+
+	bool CommandPrint(lcf::rpg::EventCommand const& com);
 	bool CommandForceSelectingActor(lcf::rpg::EventCommand const& com);
+
+	bool CommandMoveBattler(lcf::rpg::EventCommand const& com);
+	bool CommandAnimateBattler(lcf::rpg::EventCommand const& com);
+	bool CommandGetBattlerAnimation(lcf::rpg::EventCommand const& com);
+	bool CommandGetWindowOpen(lcf::rpg::EventCommand const& com);
+	bool CommandForceBattlerAction(lcf::rpg::EventCommand const& com);
+	bool CommandAddTargetToAction(lcf::rpg::EventCommand const& com);
+	bool CommandGetStringFromDB(lcf::rpg::EventCommand const& com);
+
+
+	size_t split(const std::string& txt, std::vector<std::string>& strs, char ch);
 
 	int DecodeInt(lcf::DBArray<int32_t>::const_iterator& it);
 	const std::string DecodeString(lcf::DBArray<int32_t>::const_iterator& it);

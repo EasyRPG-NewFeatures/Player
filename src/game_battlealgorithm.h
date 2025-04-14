@@ -543,6 +543,9 @@ public:
 	/** Set if the algo failed  */
 	bool SetIsFailure();
 
+	std::vector<Game_Battler*> customTargets;
+	void SetStringVarTarget(std::vector<Game_Battler*> targets);
+
 protected:
 	AlgorithmBase(Type t, Game_Battler* source, Game_Battler* target);
 	AlgorithmBase(Type t, Game_Battler* source, std::vector<Game_Battler*> targets);
@@ -632,6 +635,7 @@ public:
 
 	Normal(Game_Battler* source, Game_Battler* target, int hits_multiplier = 1, Style style = GetDefaultStyle());
 	Normal(Game_Battler* source, Game_Party_Base* target, int hits_multiplier = 1, Style style = GetDefaultStyle());
+	Normal(Game_Battler* source, std::vector<Game_Battler*> target, int hits_multiplier = 1, Style style = GetDefaultStyle());
 
 	bool vExecute() override;
 	bool vStart() override;
@@ -665,6 +669,7 @@ class Skill : public AlgorithmBase {
 public:
 	Skill(Game_Battler* source, Game_Battler* target, const lcf::rpg::Skill& skill, const lcf::rpg::Item* item = NULL);
 	Skill(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::Skill& skill, const lcf::rpg::Item* item = NULL);
+	Skill(Game_Battler* source, std::vector<Game_Battler*> target, const lcf::rpg::Skill& skill, const lcf::rpg::Item* item = NULL);
 	Skill(Game_Battler* source, const lcf::rpg::Skill& skill, const lcf::rpg::Item* item = NULL);
 
 	bool IsTargetValid(const Game_Battler&) const override;
@@ -703,6 +708,7 @@ public:
 	Item(Game_Battler* source, Game_Battler* target, const lcf::rpg::Item& item);
 	Item(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::Item& item);
 	Item(Game_Battler* source, const lcf::rpg::Item& item);
+	Item(Game_Battler* source, std::vector<Game_Battler*> target, const lcf::rpg::Item& item);
 
 	bool IsTargetValid(const Game_Battler&) const override;
 	bool vExecute() override;
