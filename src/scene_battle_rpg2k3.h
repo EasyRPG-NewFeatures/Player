@@ -88,9 +88,16 @@ public:
 	void Start() override;
 	void vUpdate() override;
 	void OnPartyChanged(Game_Actor* actor, bool add) override;
-	void OnEventHpChanged(Game_Battler* battler, int hp) override;
+	void OnEventHpChanged(Game_Battler* battler, int hp, bool miss = false) override;
 
 	void UpdateDamages(BattleAlgorithmRef action);
+
+
+	void ActionSelectedCallback(Game_Battler* for_battler) override;
+
+
+	BattleActionReturn ProcessBattleActionStartAlgo(Game_BattleAlgorithm::AlgorithmBase* action);
+	BattleActionReturn ProcessBattleActionApply(Game_BattleAlgorithm::AlgorithmBase* action);
 
 protected:
 	void Start2();
@@ -132,6 +139,9 @@ protected:
 
 	void SetState(Scene_Battle::State new_state) override;
 
+	/** Battle Action Driver */
+	BattleActionReturn ProcessBattleAction(Game_BattleAlgorithm::AlgorithmBase* action);
+
 	void FaceTarget(Game_Actor& source, const Game_Battler& target);
 
 	void CommandSelected();
@@ -141,7 +151,6 @@ protected:
 	void EscapeSelected();
 	void RowSelected();
 
-	void ActionSelectedCallback(Game_Battler* for_battler) override;
 
 	void ShowNotification(std::string text);
 	void EndNotification();
@@ -185,8 +194,6 @@ protected:
 
 	void SetBattleActionState(BattleActionState state);
 
-	/** Battle Action Driver */
-	BattleActionReturn ProcessBattleAction(Game_BattleAlgorithm::AlgorithmBase* action);
 
 	/** Battle Action State Machine callbacks */
 	BattleActionReturn ProcessBattleActionBegin(Game_BattleAlgorithm::AlgorithmBase* action);
@@ -194,7 +201,7 @@ protected:
 	BattleActionReturn ProcessBattleActionConditions(Game_BattleAlgorithm::AlgorithmBase* action);
 	BattleActionReturn ProcessBattleActionNotify(Game_BattleAlgorithm::AlgorithmBase* action);
 	BattleActionReturn ProcessBattleActionCombo(Game_BattleAlgorithm::AlgorithmBase* action);
-	BattleActionReturn ProcessBattleActionStartAlgo(Game_BattleAlgorithm::AlgorithmBase* action);
+
 	BattleActionReturn ProcessBattleActionCBAInit(Game_BattleAlgorithm::AlgorithmBase* action);
 	BattleActionReturn ProcessBattleActionCBAMove(Game_BattleAlgorithm::AlgorithmBase* action);
 	BattleActionReturn ProcessBattleActionStartAnimation(Game_BattleAlgorithm::AlgorithmBase* action);
@@ -205,7 +212,7 @@ protected:
 	BattleActionReturn ProcessBattleActionFinishPose(Game_BattleAlgorithm::AlgorithmBase* action);
 	BattleActionReturn ProcessBattleActionExecute(Game_BattleAlgorithm::AlgorithmBase* action);
 	BattleActionReturn ProcessBattleActionSwitchEvents(Game_BattleAlgorithm::AlgorithmBase* action);
-	BattleActionReturn ProcessBattleActionApply(Game_BattleAlgorithm::AlgorithmBase* action);
+
 	BattleActionReturn ProcessBattleActionPostAction(Game_BattleAlgorithm::AlgorithmBase* action);
 	BattleActionReturn ProcessBattleActionPostEvents(Game_BattleAlgorithm::AlgorithmBase* action);
 	BattleActionReturn ProcessBattleActionFinished(Game_BattleAlgorithm::AlgorithmBase* action);

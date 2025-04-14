@@ -155,6 +155,8 @@ public:
 
 	int GetTargetIndex();
 
+	bool GetMenuOpen(std::string s, int &index, int &ID);
+
 protected:
 	explicit Scene_Battle(const BattleArgs& args);
 

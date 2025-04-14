@@ -90,7 +90,8 @@ void Sprite_Actor::Update() {
 			int frame = (battler->IsDefending() ? 0 : (normal_attacking ? std::min(2, cycle / 10) : frames[cycle / 10]));
 
 			if (battler->IsDirectionFlipped()) {
-				frame = 2 - frame;
+				// Why ? This made the animation backward
+				//frame = 2 - frame;
 			}
 
 			if (frame == sprite_frame)
@@ -136,6 +137,10 @@ void Sprite_Actor::Update() {
 	if (GetBattler()->GetType() == Game_Battler::Type_Enemy && GetBattler()->GetBattleAnimationId() > 0)
 		b = !b;
 	SetFlipX(b);
+}
+
+int Sprite_Actor::GetAnimationState() {
+	return anim_state;
 }
 
 void Sprite_Actor::SetAnimationState(int state, LoopState loop, int animation_id) {

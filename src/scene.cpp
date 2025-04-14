@@ -448,7 +448,7 @@ void Scene::TransferDrawablesFrom(Scene& prev_scene) {
 void Scene::OnPartyChanged(Game_Actor*, bool) {
 }
 
-void Scene::OnEventHpChanged(Game_Battler*, int) {
+void Scene::OnEventHpChanged(Game_Battler*, int, bool) {
 }
 
 void Scene::OnTranslationChanged() {

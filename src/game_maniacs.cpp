@@ -111,4 +111,12 @@ namespace ManiacsBattle
 		return forceSelectingActor;
 	}
 
+	bool disableCancelCommandSelection = false;
+	bool GetDisableCancelCommandSelection() {
+		return disableCancelCommandSelection;
+	}
+	void SetDisableCancelCommandSelection(bool b) {
+		disableCancelCommandSelection = b;
+	}
+
 }

@@ -327,7 +327,7 @@ void BattleAnimationBattle::Draw(Bitmap& dst) {
 	if (IsOnlySound())
 		return;
 	if (animation.scope == lcf::rpg::Animation::Scope_screen) {
-		DrawAt(dst, Player::menu_offset_x + (Player::screen_width / 2), Player::menu_offset_y + (Player::screen_height / 3));
+		DrawAt(dst, Player::battle_offset_x + (Player::screen_width / 2), Player::battle_offset_y + (Player::screen_height / 3));
 		return;
 	}
 
@@ -341,7 +341,9 @@ void BattleAnimationBattle::Draw(Bitmap& dst) {
 				offset = CalculateOffset(animation.position, GetAnimationCellHeight() / 2);
 			}
 		}
-		DrawAt(dst, Player::menu_offset_x + battler->GetBattlePosition().x, Player::menu_offset_y + battler->GetBattlePosition().y + offset, sprite);
+
+		DrawAt(dst, Player::battle_offset_x + battler->GetBattlePosition().x, Player::battle_offset_y + battler->GetBattlePosition().y + offset);
+
 	}
 }
 void BattleAnimationBattle::FlashTargets(int r, int g, int b, int p) {
@@ -366,14 +368,16 @@ void BattleAnimationBattler::Draw(Bitmap& dst) {
 	if (IsOnlySound())
 		return;
 	if (animation.scope == lcf::rpg::Animation::Scope_screen) {
-		DrawAt(dst, Player::menu_offset_x + Player::screen_width / 2, Player::menu_offset_y + Player::screen_height / 3);
+		DrawAt(dst, Player::battle_offset_x + Player::screen_width / 2, Player::battle_offset_y + Player::screen_height / 3);
 		return;
 	}
 
 	for (auto* battler: battlers) {
 		SetFlashEffect(battler->GetFlashColor());
+
 		// Game_Battler::GetDisplayX() and Game_Battler::GetDisplayX() already add MENU_OFFSET
 		DrawAt(dst, battler->GetDisplayX(), battler->GetDisplayY(), battler->GetBattleSprite());
+
 	}
 }
 

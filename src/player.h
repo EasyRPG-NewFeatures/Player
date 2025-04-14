@@ -325,6 +325,12 @@ namespace Player {
 	/** The height of the screen */
 	extern int screen_height;
 
+	/** (Battle) The X offset used to center UI in custom resolutions */
+	extern int battle_offset_x;
+
+	/** (Battle) The Y offset used to center UI in custom resolutions */
+	extern int battle_offset_y;
+
 	/** The X offset used to center UI in custom resolutions */
 	extern int menu_offset_x;
 

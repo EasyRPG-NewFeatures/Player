@@ -105,6 +105,10 @@ namespace Player {
 	int screen_height = SCREEN_TARGET_HEIGHT;
 	int menu_offset_x = (screen_width - MENU_WIDTH) / 2;
 	int menu_offset_y = (screen_height - MENU_HEIGHT) / 2;
+
+	int battle_offset_x = 0;
+	int battle_offset_y = 0;
+
 	int message_box_offset_x = (screen_width - MENU_WIDTH) / 2;
 	bool has_custom_resolution = false;
 

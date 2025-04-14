@@ -103,6 +103,7 @@ public:
 	void DoAfterimageFade();
 
 	int opacity;
+	int GetAnimationState();
 
 protected:
 	bool useDeathFade = false;
