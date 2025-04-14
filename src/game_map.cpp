@@ -2052,6 +2052,7 @@ int Game_Map::ChangeTile(int layer, int x, int y, int new_id) {
 
 	SetNeedRefresh(true);
 	return 1;
+}
 
 int Game_Map::GetTileID(int x, int y, int layer) {
 

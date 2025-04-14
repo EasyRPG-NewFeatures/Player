@@ -307,6 +307,8 @@ protected:
 	bool CommandGet3DPictureRotate(lcf::rpg::EventCommand const& com);
 	bool CommandSetDoomMap(lcf::rpg::EventCommand const& com);
 
+	bool CommandImportDescSkill(lcf::rpg::EventCommand const& com);
+
 
 	int DecodeInt(lcf::DBArray<int32_t>::const_iterator& it);
 	const std::string DecodeString(lcf::DBArray<int32_t>::const_iterator& it);

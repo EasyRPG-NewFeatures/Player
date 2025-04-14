@@ -71,6 +71,8 @@
 #include "scene_battle.h"
 #include "game_maniacs.h"
 
+#include <lcf/ldb/reader.h>
+
 enum BranchSubcommand {
 	eOptionBranchElse = 1
 };
@@ -850,6 +852,8 @@ bool Game_Interpreter::ExecuteCommand(lcf::rpg::EventCommand const& com) {
 			return Command3DPictureRotate(com);
 		case 9903:
 			return CommandGet3DPictureRotate(com);
+		case 12345:
+			return CommandImportDescSkill(com);
 		default:
 			return true;
 	}
@@ -5476,6 +5480,8 @@ bool Game_Interpreter::CommandSetCustomIsSkillUsable(lcf::rpg::EventCommand cons
 	CustomCheckSkill::used = true;
 
 	// Output::Debug("CustomSkillUsable {} {} {} {}", eventID, actorID, skillID, result);
+	return true;
+}
 
 bool Game_Interpreter::Command3DPicture(lcf::rpg::EventCommand const& com) {
 	
@@ -5606,18 +5612,25 @@ bool Game_Interpreter::CommandShowStringPicSelectable(lcf::rpg::EventCommand con
 		Output::Info("ShowStringPic {} doesn't exist", picIndex);
 	else {
 		if (type == 0) {
+			int index = 0;
+			if (com.parameters.size() > 4)
+				index = ValueOrVariable(com.parameters[3], com.parameters[4]);
+
 			Main_Data::game_windows->GetWindow(picIndex).window->SetIndex(0);
 			Main_Data::game_windows->GetWindow(picIndex).window->SetActive(true);
 			auto text = Main_Data::game_windows->GetWindow(picIndex).data.texts;
 			int maxItem = 0;
 			for (const auto& text : text) {
-				std::stringstream ss(ToString(text.text));
+				std::string s = Game_Strings::Extract(ToString(text.text), false);
+				std::stringstream ss(s);
 				std::string out;
 				while (Utils::ReadLine(ss, out)) {
 					maxItem++;
 				}
 			}
+
 			Main_Data::game_windows->GetWindow(picIndex).window->SetItemMax(maxItem);
+			Main_Data::game_windows->GetWindow(picIndex).window->SetIndex(index);
 		}
 		else if (type == 1) {
 			if (Main_Data::game_windows->GetWindow(picIndex).window->GetActive()) {
@@ -5841,12 +5854,88 @@ bool Game_Interpreter::CommandSetDoomMap(lcf::rpg::EventCommand const& com) {
 
 	int picID = ValueOrVariable(com.parameters[0], com.parameters[1]);
 
-	int moveType = 0;
-	if (com.parameters.size() >= 3)
-		moveType = com.parameters[2];
-	Main_Data::game_player->doomMoveType = moveType;
+	Main_Data::game_player->doomMoveType = com.parameters[2];
 	Main_Data::game_pictures->ShowDoomMap(picID);
 
 	return true;
 }
 
+bool Game_Interpreter::CommandImportDescSkill(lcf::rpg::EventCommand const& com) {
+
+
+	std::string ini_file = FileFinder::Game().FindFile("skillsDesc.txt");
+	auto ini_stream = FileFinder::Game().OpenInputStream(ini_file, std::ios_base::in);
+
+	std::sregex_iterator end;
+
+	for (std::string line; getline(ini_stream, line); )
+	{
+
+		std::regex regElt("(\\d*) \\[\\|\\|\\] (.*)");
+		std::sregex_iterator it_element(line.begin(), line.end(), regElt);
+		while (it_element != end)
+		{
+			if (it_element->size() > 0) {
+				if (it_element->str(1) != "") {
+					int id = std::stoi(it_element->str(1));
+					if (id > 0) {
+						auto s = lcf::ReaderUtil::GetElement(lcf::Data::skills, id);
+						if (s) {
+							auto desc = lcf::DBString(it_element->str(2).data());
+							s->description = desc;
+
+							Output::Debug(" {} / {}", it_element->str(1), it_element->str(2));
+						}
+					}
+				}
+			}
+			it_element++;
+		}
+	}
+
+	ini_file = FileFinder::Game().FindFile("skillsMP.txt");
+	ini_stream = FileFinder::Game().OpenInputStream(ini_file, std::ios_base::in);
+
+
+	for (std::string line; getline(ini_stream, line); )
+	{
+
+		std::regex regElt("(\\d*) \\[\\|\\|\\] (.*)");
+		std::sregex_iterator it_element(line.begin(), line.end(), regElt);
+		while (it_element != end)
+		{
+			if (it_element->size() > 0) {
+				if (it_element->str(1) != "") {
+					int id = std::stoi(it_element->str(1));
+					if (id > 0) {
+						auto s = lcf::ReaderUtil::GetElement(lcf::Data::skills, id);
+						if (s) {
+							auto desc = std::stoi(it_element->str(2));
+							if (id<200)
+								s->sp_percent = desc;
+							else
+								s->sp_cost = desc;
+
+							Output::Debug(" {} / {}", it_element->str(1), it_element->str(2));
+						}
+					}
+				}
+			}
+			it_element++;
+		}
+	}
+
+	auto db = lcf::Data::data;
+
+	const auto filename = "RPG_RT_NEW.ldb";
+	Output::Debug("Saving to {}", filename);
+
+	auto save_stream = FileFinder::Save().OpenOutputStream(filename);
+	std::string in = save_stream.GetName().data();
+	auto file = lcf::LDB_Reader::Save(in, db);
+
+	if (file)
+		Output::Debug("Saved");
+
+	return true;
+}

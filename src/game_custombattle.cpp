@@ -191,7 +191,8 @@ int Game_CustomBattle::getItemAnimationID(int i) {
 
 std::string Game_CustomBattle::getSkillAlgo(int i, const Game_Battler& src, bool exactly) {
 	std::string str = "";
-
+	if (actors.size() == 0)
+		return "";
 
 	if (src.GetType() == Game_Battler::Type_Ally) {
 		if (i == -1)
@@ -398,7 +399,7 @@ std::string Game_CustomBattle::parseExpression(const string& expression, const G
 	chaine = sub_string;
 
 
-
+	sub_string = chaine;
 	std::regex regElt("elements\\((\\d*), *(\\d*)\\)");
 	std::sregex_iterator it_element(chaine.begin(), chaine.end(), regElt);
 	while (it_element != end)
@@ -408,8 +409,6 @@ std::string Game_CustomBattle::parseExpression(const string& expression, const G
 
 		int elementsID = std::stoi(it_element->str(1)) - 1;
 		int elementPwr = std::stoi(it_element->str(2));
-
-		// Output::Debug("{} {} {} {}", eventID, enemy_index, enemyID, it_event->str());
 
 		if (elementsID > 0) {
 
@@ -426,7 +425,10 @@ std::string Game_CustomBattle::parseExpression(const string& expression, const G
 
 		}
 
-		sub_string = ReplaceString(chaine, it_element->str(), pwr);
+
+		Output::Debug("{} {} {}", elementsID, elementPwr, pwr);
+
+		sub_string = ReplaceString(sub_string, it_element->str(), pwr);
 
 		it_element++;
 	}

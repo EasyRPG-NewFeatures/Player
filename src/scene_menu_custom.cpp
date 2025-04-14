@@ -83,7 +83,7 @@ void Scene_Menu_Custom::callCommonEvent() {
 	}
 	else {
 		//Game_Map::GetInterpreter().Push(common_event);
-		common_event->ForceCreate(eventID);
+		common_event->ForceCreateNoCheck(eventID);
 		common_event->ForceUpdate(true);
 	}
 }

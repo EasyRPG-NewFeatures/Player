@@ -2169,7 +2169,7 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionVi
 			int y = CustomBattle::customWindows[win_name].y;
 			int w = CustomBattle::customWindows[win_name].w;
 			int h = CustomBattle::customWindows[win_name].h;
-			result_window.reset(new Window_BattleStatusCustom(x, y, w, h));
+			result_window.reset(new Window_BattleStatusCustom(this, x, y, w, h));
 
 
 			result_window->SetColumnMax(CustomBattle::customWindows[win_name].column);
@@ -2258,7 +2258,7 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionVi
 		int y = CustomBattle::customWindows[win_name].y;
 		int w = CustomBattle::customWindows[win_name].w;
 		int h = CustomBattle::customWindows[win_name].h;
-		result_windowItems.reset(new Window_BattleStatusCustom(x, y, w, h));
+		result_windowItems.reset(new Window_BattleStatusCustom(this, x, y, w, h));
 
 
 		result_windowItems->SetColumnMax(CustomBattle::customWindows[win_name].column);
@@ -3113,67 +3113,68 @@ Scene_Battle_Rpg2k3::BattleActionReturn Scene_Battle_Rpg2k3::ProcessBattleAction
 	if (target_sprite) {
 		target_sprite->DetectStateChange();
 	}
-
-	if (action->IsSuccess()) {
-		if (action->IsCriticalHit()) {
-			Main_Data::game_screen->FlashOnce(28, 28, 28, 20, 8);
-		}
-		if (action->IsAffectHp()) {
-			const auto hp = action->GetAffectedHp();
-			if (hp != 0 || (!action->IsPositive() && !action->IsAbsorbHp())) {
-				if (CE_ID > 0) {
-					if (hp > 0)
-					{
-						Main_Data::game_variables->Set(Var_ID + 4, 1);
-						Main_Data::game_variables->Set(Var_ID + 5, std::abs(hp));
+	if (action->IsAffectDef() || action->IsAffectAgi() || action->IsAffectAtk() || action->IsAffectHp() || action->IsAffectSp() || action->IsAffectSpi() || action->GetStateEffects().size() > 0)
+		if (action->IsSuccess()) {
+			if (action->IsCriticalHit()) {
+				Main_Data::game_screen->FlashOnce(28, 28, 28, 20, 8);
+			}
+			if (action->IsAffectHp()) {
+				const auto hp = action->GetAffectedHp();
+				if (hp != 0 || (!action->IsPositive() && !action->IsAbsorbHp())) {
+					if (CE_ID > 0) {
+						if (hp > 0)
+						{
+							Main_Data::game_variables->Set(Var_ID + 4, 1);
+							Main_Data::game_variables->Set(Var_ID + 5, std::abs(hp));
+						}
+						else
+						{
+							Main_Data::game_variables->Set(Var_ID + 4, 0);
+							Main_Data::game_variables->Set(Var_ID + 5, std::abs(hp));
+						}
 					}
 					else
-					{
-						Main_Data::game_variables->Set(Var_ID + 4, 0);
-						Main_Data::game_variables->Set(Var_ID + 5, std::abs(hp));
+						DrawFloatText(
+							target->GetBattlePosition().x,
+							target->GetBattlePosition().y,
+							hp > 0 ? Font::ColorHeal : Font::ColorDefault,
+							std::to_string(std::abs(hp)));
+
+					if (action->IsAbsorbHp() && CE_ID > 0) {
+						DrawFloatText(
+							source->GetBattlePosition().x,
+							source->GetBattlePosition().y,
+							hp > 0 ? Font::ColorDefault : Font::ColorHeal,
+							std::to_string(std::abs(hp)));
 					}
 				}
-				else
-					DrawFloatText(
-						target->GetBattlePosition().x,
-						target->GetBattlePosition().y,
-						hp > 0 ? Font::ColorHeal : Font::ColorDefault,
-						std::to_string(std::abs(hp)));
 
-				if (action->IsAbsorbHp() && CE_ID > 0) {
-					DrawFloatText(
-						source->GetBattlePosition().x,
-						source->GetBattlePosition().y,
-						hp > 0 ? Font::ColorDefault : Font::ColorHeal,
-						std::to_string(std::abs(hp)));
-				}
-			}
-
-			if (!action->IsPositive() && !action->IsAbsorbHp()) {
-				if (target->GetType() == Game_Battler::Type_Ally) {
-					Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_AllyDamage));
-				}
-				else {
-					Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_EnemyDamage));
+				if (!action->IsPositive() && !action->IsAbsorbHp()) {
+					if (target->GetType() == Game_Battler::Type_Ally) {
+						Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_AllyDamage));
+					}
+					else {
+						Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_EnemyDamage));
+					}
 				}
 			}
 		}
-	}
-	else {
-		auto* se = action->GetFailureSe();
-		if (se) {
-			Main_Data::game_system->SePlay(*se);
+		else {
+			auto* se = action->GetFailureSe();
+			if (se) {
+				Main_Data::game_system->SePlay(*se);
+			}
+			if (CE_ID > 0) {
+				Main_Data::game_variables->Set(Var_ID + 4, 2);
+			}
+			else
+				DrawFloatText(
+					target->GetBattlePosition().x,
+					target->GetBattlePosition().y,
+					0,
+					lcf::Data::terms.miss);
 		}
-		if (CE_ID > 0) {
-			Main_Data::game_variables->Set(Var_ID + 4, 2);
-		}
-		else
-			DrawFloatText(
-				target->GetBattlePosition().x,
-				target->GetBattlePosition().y,
-				0,
-				lcf::Data::terms.miss);
-	}
+
 	if (CE_ID > 0) {
 		int x = target->GetBattlePosition().x;
 		int y = target->GetBattlePosition().y;
