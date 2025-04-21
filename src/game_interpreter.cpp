@@ -864,21 +864,21 @@ bool Game_Interpreter::ExecuteCommand(lcf::rpg::EventCommand const& com) {
 			return CommandManiacGetBattleInfo(com);
 		case -1:
 			return CommandPrint(com);
-		case 9992:
+		case 8992:
 			return CommandForceSelectingActor(com);
-		case 9993:
+		case 8993:
 			return CommandGetTarget(com);
-		case 9994:
+		case 8994:
 			return CommandMoveBattler(com);
-		case 9995:
+		case 8995:
 			return CommandAnimateBattler(com);
-		case 9996:
+		case 8996:
 			return CommandGetBattlerAnimation(com);
-		case 9997:
+		case 8997:
 			return CommandGetWindowOpen(com);
-		case 9998:
+		case 8998:
 			return CommandForceBattlerAction(com);
-		case 9999:
+		case 8999:
 			return CommandAddTargetToAction(com);
 		case 2055:
 			return CommandGetStringFromDB(com);
@@ -2989,7 +2989,8 @@ bool Game_Interpreter::CommandShowPicture(lcf::rpg::EventCommand const& com) { /
 		// both chunks here.
 		// Maniac Patch uses the upper bits for flags, mask it away
 		params.bottom_trans = ManiacBitmask(com.parameters[14], 0xFF);
-	} else if (Player::IsRPG2k3() && !Player::IsRPG2k3E()) {
+	}
+	else if (Player::IsRPG2k3() && !Player::IsRPG2k3E()) {
 		// Corner case when 2k maps are used in 2k3 (pre-1.10) and don't contain this chunk
 		params.bottom_trans = params.top_trans;
 	}
@@ -2999,7 +3000,8 @@ bool Game_Interpreter::CommandShowPicture(lcf::rpg::EventCommand const& com) { /
 		if (Player::IsPatchManiac()) {
 			pic_id = ValueOrVariableBitfield(com.parameters[17], 0, pic_id);
 			//params.name = ToString(CommandStringOrVariableBitfield(com, 17, 2, 30));
-		} else {
+		}
+		else {
 			pic_id = ValueOrVariable(com.parameters[17], pic_id);
 		}
 		if (com.parameters[19] != 0) {
@@ -3013,9 +3015,9 @@ bool Game_Interpreter::CommandShowPicture(lcf::rpg::EventCommand const& com) { /
 		if (Player::IsPatchManiac()) {
 			// Color tint using variables
 			params.red = ValueOrVariableBitfield(com.parameters[17], 3, params.red);
-			params.green = ValueOrVariableBitfield(com.parameters[17], 3,  params.green);
+			params.green = ValueOrVariableBitfield(com.parameters[17], 3, params.green);
 			params.blue = ValueOrVariableBitfield(com.parameters[17], 3, params.blue);
-			params.saturation = ValueOrVariableBitfield(com.parameters[17], 3,  params.saturation);
+			params.saturation = ValueOrVariableBitfield(com.parameters[17], 3, params.saturation);
 		}
 
 		params.magnify_width = ValueOrVariableBitfield(com.parameters[20], 0, params.magnify_width);
@@ -3023,7 +3025,8 @@ bool Game_Interpreter::CommandShowPicture(lcf::rpg::EventCommand const& com) { /
 			// The >= 16 check is needed because this bit is set when independent width/height scaling is used
 			// When using special effects on Maniacs, Height is set to Width
 			params.magnify_height = ValueOrVariableBitfield((com.parameters[20] >> 1), 1, com.parameters[31]);
-		} else {
+		}
+		else {
 			params.magnify_height = params.magnify_width;
 		}
 
@@ -3037,7 +3040,8 @@ bool Game_Interpreter::CommandShowPicture(lcf::rpg::EventCommand const& com) { /
 			if (com.parameters[24] == 2) {
 				params.spritesheet_speed = com.parameters[25];
 				params.spritesheet_play_once = com.parameters[26];
-			} else {
+			}
+			else {
 				// Picture data / LSD data frame number is 0 based, while event parameter counts from 1.
 				params.spritesheet_frame = ValueOrVariable(com.parameters[24], com.parameters[25]) - 1;
 			}
@@ -3052,9 +3056,11 @@ bool Game_Interpreter::CommandShowPicture(lcf::rpg::EventCommand const& com) { /
 			int blend_mode = flags & 3;
 			if (blend_mode == 1) {
 				params.blend_mode = (int)Bitmap::BlendMode::Multiply;
-			} else if (blend_mode == 2) {
+			}
+			else if (blend_mode == 2) {
 				params.blend_mode = (int)Bitmap::BlendMode::Additive;
-			} else if (blend_mode == 3) {
+			}
+			else if (blend_mode == 3) {
 				params.blend_mode = (int)Bitmap::BlendMode::Overlay;
 			}
 			params.flip_x = (flags & 16) == 16;
@@ -6042,7 +6048,7 @@ bool Game_Interpreter::CommandAnimateBattler(lcf::rpg::EventCommand const& com) 
 
 	Game_Battler* battler = NULL;
 	if (ID < 0) {
-		battler = Main_Data::game_enemyparty.get()->GetEnemy(-ID);
+		battler = Main_Data::game_enemyparty.get()->GetEnemy(-ID - 1);
 	}
 	else {
 		battler = Main_Data::game_party.get()->GetActor(ID);
@@ -6150,7 +6156,7 @@ bool Game_Interpreter::CommandForceBattlerAction(lcf::rpg::EventCommand const& c
 
 	Game_Battler* battler = NULL;
 	if (ID < 0) {
-		battler = Main_Data::game_enemyparty.get()->GetEnemy(-ID);
+		battler = Main_Data::game_enemyparty.get()->GetEnemy(-ID - 1);
 	}
 	else {
 		battler = Main_Data::game_party.get()->GetActor(ID);

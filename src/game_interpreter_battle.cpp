@@ -218,13 +218,9 @@ bool Game_Interpreter_Battle::ExecuteCommand(lcf::rpg::EventCommand const& com) 
 			return CommandManiacControlAtbGauge(com);
 		case Cmd::Maniac_ChangeBattleCommandEx:
 			return CommandManiacChangeBattleCommandEx(com);
-		case Cmd::Maniac_GetBattleInfo:
-			return CommandManiacGetBattleInfo(com);
 		// Should be changed
 		case 9999:
 			return CommandSetEnemyWeapon(com);
-		case 9993:
-			return CommandGetTarget(com);
 		default:
 			return Game_Interpreter::ExecuteCommand(com);
 	}
