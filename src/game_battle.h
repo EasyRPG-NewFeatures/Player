@@ -203,6 +203,7 @@ namespace Game_Battle {
 	* Common Event in Battle
 	*/
 	void StartCommonEvent(int i);
+	Game_Interpreter& GetInterpreter_pp();
 	Game_CommonEvent* StartCommonEventID(int id);
 }
 

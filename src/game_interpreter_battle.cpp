@@ -43,6 +43,11 @@ Game_Interpreter_Battle::Game_Interpreter_Battle(Span<const lcf::rpg::TroopPage>
 {
 }
 
+Game_Interpreter_Battle::Game_Interpreter_Battle(bool main_flag)
+	: Game_Interpreter(main_flag)
+{
+}
+
 bool Game_Interpreter_Battle::AreConditionsMet(const lcf::rpg::TroopPageCondition& condition, Game_Battler* source) {
 	if (!condition.flags.switch_a &&
 		!condition.flags.switch_b &&
@@ -458,9 +463,14 @@ bool Game_Interpreter_Battle::CommandShowBattleAnimation(lcf::rpg::EventCommand 
 
 		if (allies) {
 			// Allies counted from 1
-			target -= 1;
-			if (target >= 0 && target < Main_Data::game_party->GetBattlerCount()) {
-				battler_target = &(*Main_Data::game_party)[target];
+						//target -= 1;
+						// ??? The editor display all actors, and not only Actors in party
+						/*if (target >= 0 && target < Main_Data::game_party->GetBattlerCount()) {
+							battler_target = &(*Main_Data::game_party)[target];
+						}*/
+
+			if (target >= 0 && target < Main_Data::game_actors->GetNumActors()) {
+				battler_target = &(*Main_Data::game_actors->GetActor(target));
 			}
 		}
 		else {
@@ -990,13 +1000,25 @@ Game_CommonEvent* Game_Interpreter_Battle::StartCommonEvent(int i) {
 			b = true;
 			//common_event = _state.stack[j];
 		}
+	} 
+
+	if (common_event->GetIndex() == ManiacsBattle::Get_DamageCE() || common_event->GetIndex() == ManiacsBattle::Get_ATBCE() ||
+		common_event->GetIndex() == ManiacsBattle::Get_StateCE() || common_event->GetIndex() == ManiacsBattle::Get_StatsCE() ||
+		common_event->GetIndex() == ManiacsBattle::Get_TargetCE()) {
+		b = false;
 	}
 
-	if (!b)
+	if (!b) {
 		PushCommonEvent(common_event);
+
+		// Output::Debug("Push {}", common_event->GetIndex());
+		common_event->ForceCreate(common_event->GetIndex());
+		// common_event->UpdateBattle(false, common_event->GetIndex());
+	}
 	else {
-		//common_event->Update(false);
-		return NULL;
+		// Output::Debug("Update {}", common_event->GetIndex());
+		common_event->UpdateBattle(true, common_event->GetIndex());
+		return common_event;
 	}
 
 	return common_event;
@@ -1005,4 +1027,12 @@ Game_CommonEvent* Game_Interpreter_Battle::StartCommonEvent(int i) {
 void Game_Interpreter_Battle::PushCommonEvent(Game_CommonEvent* ev) {
 	Push(ev->GetList(), -ev->GetIndex(), false);
 	//Push(ev->GetList(), 0, false);
+}
+
+void Game_Interpreter_Battle::RemoveCommonEventID(int eventID) {
+	for (int j = 0; j < _state.stack.size(); j++) {
+		if (_state.stack[j].event_id == -eventID) {
+			_state.stack.erase(std::remove(_state.stack.begin(), _state.stack.end(), _state.stack[j]), _state.stack.end());
+		}
+	}
 }
