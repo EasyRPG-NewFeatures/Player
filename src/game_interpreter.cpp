@@ -428,7 +428,7 @@ void Game_Interpreter::Update(bool reset_loop_count) {
 				break;
 			}
 
-			if (!Input::IsTriggered(Input::DECISION)) {
+			if (!Input::IsAnyTriggered()) {
 				break;
 			}
 			_state.wait_key_enter = false;
@@ -496,7 +496,7 @@ void Game_Interpreter::Update(bool reset_loop_count) {
 
 		if (Game_Battle::IsBattleRunning() && Player::IsRPG2k3() && Game_Battle::CheckWin()) {
 			// Interpreter is cancelled when a win condition is fulfilled in RPG2k3 battle
-			break;
+			// break;
 		}
 
 		// Last event command removed the frame? We're done.
@@ -1937,7 +1937,7 @@ int Game_Interpreter::ValueOrVariableBitfield(int mode, int shift, int val) {
 }
 
 int Game_Interpreter::ValueOrVariableBitfield(lcf::rpg::EventCommand const& com, int mode_idx, int shift, int val_idx) {
-	assert(com.parameters.size() > val_idx);
+	//assert(com.parameters.size() > val_idx);
 
 	if (!Player::IsPatchManiac()) {
 		return com.parameters[val_idx];
@@ -2391,8 +2391,8 @@ bool Game_Interpreter::CommandChangeActorFace(lcf::rpg::EventCommand const& com)
 	}
 
 	actor->SetFace(
-			ToString(CommandStringOrVariableBitfield(com, 2, 1, 3)),
-			ValueOrVariableBitfield(com, 2, 2, 1));
+		ToString(CommandStringOrVariableBitfield(com, 2, 1, 3)),
+		ValueOrVariableBitfield(com, 2, 2, 1));
 	return true;
 }
 
@@ -3717,6 +3717,8 @@ bool Game_Interpreter::CommandConditionalBranch(lcf::rpg::EventCommand const& co
 	case 5:
 		// Hero
 		actor_id = com.parameters[1];
+		if (com.parameters[4] == 1)
+			actor_id = Main_Data::game_variables->Get(actor_id);
 		actor = Main_Data::game_actors->GetActor(actor_id);
 
 		if (!actor) {

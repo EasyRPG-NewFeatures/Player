@@ -352,7 +352,6 @@ bool Game_Battler::AddState(int state_id, bool allow_battle_states) {
 
 		Game_CommonEvent* ce = Game_Battle::StartCommonEventID(CE_ID);
 		ce->UpdateBattle(true, CE_ID);
-		Game_Battle::GetInterpreter().Clear();
 
 		int v = Var_ID + 2;
 		state_id = Main_Data::game_variables->Get(v);
@@ -555,7 +554,6 @@ int Game_Battler::ChangeSp(int sp) {
 			Game_CommonEvent* ce = Game_Battle::StartCommonEventID(CE_ID);
 
 			ce->UpdateBattle(true, CE_ID);
-			Game_Battle::GetInterpreter().Clear();
 
 			sp = Main_Data::game_variables->Get(Var_ID + 5);
 
@@ -830,7 +828,6 @@ int Game_Battler::ChangeAtkModifier(int modifier) {
 
 		Game_CommonEvent* ce = Game_Battle::StartCommonEventID(CE_ID);
 		ce->UpdateBattle(true, CE_ID);
-		Game_Battle::GetInterpreter().Clear();
 
 		delta = Main_Data::game_variables->Get(Var_ID + 5);
 
@@ -866,7 +863,6 @@ int Game_Battler::ChangeDefModifier(int modifier) {
 
 		Game_CommonEvent* ce = Game_Battle::StartCommonEventID(CE_ID);
 		ce->UpdateBattle(true, CE_ID);
-		Game_Battle::GetInterpreter().Clear();
 
 		delta = Main_Data::game_variables->Get(Var_ID + 5);
 
@@ -902,7 +898,6 @@ int Game_Battler::ChangeSpiModifier(int modifier) {
 
 		Game_CommonEvent* ce = Game_Battle::StartCommonEventID(CE_ID);
 		ce->UpdateBattle(true, CE_ID);
-		Game_Battle::GetInterpreter().Clear();
 
 		delta = Main_Data::game_variables->Get(Var_ID + 5);
 
@@ -938,7 +933,6 @@ int Game_Battler::ChangeAgiModifier(int modifier) {
 
 		Game_CommonEvent* ce = Game_Battle::StartCommonEventID(CE_ID);
 		ce->UpdateBattle(true, CE_ID);
-		Game_Battle::GetInterpreter().Clear();
 
 		delta = Main_Data::game_variables->Get(Var_ID + 5);
 

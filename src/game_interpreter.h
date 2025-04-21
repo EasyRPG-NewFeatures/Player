@@ -108,7 +108,7 @@ public:
 	bool IsWaitingForWaitCommand() const;
 
 protected:
-	static constexpr int loop_limit = 10000;
+	static constexpr int loop_limit = 1000000;
 	static constexpr int call_stack_limit = 1000;
 	static constexpr int subcommand_sentinel = 255;
 

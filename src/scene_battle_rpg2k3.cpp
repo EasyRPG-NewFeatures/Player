@@ -1084,6 +1084,11 @@ void Scene_Battle_Rpg2k3::vUpdate() {
 			break;
 		}
 
+		if (Game_Battle::GetInterpreter_pp().IsRunning() && (state == State_Victory || state == State_Defeat || state == State_Start)) {
+			if (Game_Battle::GetInterpreter_pp().IsWaitingForWaitCommand())
+				break;
+		}
+
 		if (state != State_Victory && state != State_Defeat && Game_Battle::GetInterpreter().IsRunning()) {
 			break;
 		}
@@ -1097,7 +1102,7 @@ void Scene_Battle_Rpg2k3::vUpdate() {
 		}
 	}
 
-	if (!Game_Message::IsMessageActive()) {
+	if (!Game_Message::IsMessageActive() && state != State_Start) {
 		Game_Battle::StartCommonEvent(2);
 	}
 
@@ -1236,6 +1241,9 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionSt
 		eUpdateBattlers,
 		eUpdateEvents,
 	};
+
+	Game_Battle::StartCommonEvent(1);
+
 
 	if (scene_action_substate == eStartMessage) {
 		ResetWindows(true);
@@ -2121,6 +2129,10 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionVi
 	}
 
 	if (scene_action_substate == eBegin) {
+		if (!Game_Message::IsMessageActive())
+		{
+			Game_Battle::StartCommonEvent(2);
+		}
 		ResetWindows(true);
 		status_window->SetVisible(true);
 
@@ -3192,7 +3204,8 @@ Scene_Battle_Rpg2k3::BattleActionReturn Scene_Battle_Rpg2k3::ProcessBattleAction
 
 		if ((action->IsAffectHp() || !action->IsSuccess())) {
 
-			Game_Battle::StartCommonEventID(CE_ID);
+			auto ce = Game_Battle::StartCommonEventID(CE_ID);
+			ce->UpdateBattle(true, CE_ID);
 		}
 	}
 
