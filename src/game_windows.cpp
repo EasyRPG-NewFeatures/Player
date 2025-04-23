@@ -22,10 +22,10 @@
 #include "compiler.h"
 #include "text.h"
 #include "cache.h"
-#include "pending_message.h"
 #include "filefinder.h"
 #include "output.h"
 #include "player.h"
+#include "bitmap.h"
 
 static std::optional<std::string> CommandCodeInserter(char ch, const char **iter, const char *end, uint32_t escape_char) {
 	if ((ch == 'T' || ch == 't') && Player::IsPatchManiac()) {
@@ -131,6 +131,9 @@ bool Game_Windows::Window_User::Create(const WindowParams& params) {
 		data.texts.push_back(data_text);
 	}
 
+	maxDisplay = -1;
+	displayAll = false;
+
 	return true;
 }
 
@@ -155,6 +158,9 @@ void Game_Windows::Window_User::Erase() {
 	data = {};
 	data.ID = id;
 
+	maxDisplay = -1;
+	displayAll = false;
+
 	request_ids.clear();
 }
 
@@ -169,11 +175,31 @@ void Game_Windows::Window_User::Refresh(bool& async_wait) {
 		return;
 	}
 
+	RefreshText();
+
+	// Add to picture
+	auto& pic = Main_Data::game_pictures->GetPicture(data.ID);
+	pic.AttachWindow(*window);
+}
+
+void Game_Windows::Window_User::RefreshText() {
+
+	if (!displayAll)
+		maxDisplay++;
+
+	bool stepByStepDisplay = false;
+
+	int currentDisplay = -1;
+
 	std::vector<FontRef> fonts;
-	std::vector<PendingMessage> messages;
+	bool firstTime = false;
+	if (messages_memory.empty())
+		firstTime = true;
+
+	bool skippedSomething = false;
 
 	// Preprocessing
-	for (const auto& text: data.texts) {
+	for (const auto& text : data.texts) {
 		FontRef font;
 
 		Filesystem_Stream::InputStream font_file;
@@ -194,7 +220,7 @@ void Game_Windows::Window_User::Refresh(bool& async_wait) {
 			}
 
 			if (!font_file) {
-				font_file = FileFinder::OpenFont(font_name+ "-Regular");
+				font_file = FileFinder::OpenFont(font_name + "-Regular");
 			}
 
 			if (!font_file) {
@@ -204,14 +230,16 @@ void Game_Windows::Window_User::Refresh(bool& async_wait) {
 			if (!font_file) {
 				Output::Warning("Font not found: {}", text.font_name);
 				font = Font::Default();
-			} else {
+			}
+			else {
 				font = Font::CreateFtFont(std::move(font_file), text.font_size, text.flags.bold, text.flags.italic);
 				if (!font) {
 					Output::Warning("Error loading font: {}", text.font_name);
 					font = Font::Default();
 				}
 			}
-		} else {
+		}
+		else {
 			font = Font::Default();
 		}
 
@@ -223,7 +251,8 @@ void Game_Windows::Window_User::Refresh(bool& async_wait) {
 		while (Utils::ReadLine(ss, out)) {
 			pm.PushLine(out);
 		}
-		messages.emplace_back(pm);
+		if (firstTime)
+			messages_memory.emplace_back(pm);
 	}
 
 	auto apply_style = [](auto& font, const auto& text) {
@@ -236,7 +265,7 @@ void Game_Windows::Window_User::Refresh(bool& async_wait) {
 		style.color_offset = {};
 		style.letter_spacing = text.letter_spacing;
 		return font->ApplyStyle(style);
-	};
+		};
 
 	if (data.width == 0 || data.height == 0) {
 		// Automatic window size
@@ -246,13 +275,13 @@ void Game_Windows::Window_User::Refresh(bool& async_wait) {
 		for (size_t i = 0; i < data.texts.size(); ++i) {
 			// Lots of duplication with the rendering code below but cannot be easily reduced more
 			auto& font = fonts[i];
-			const auto& pm = messages[i];
+			const auto& pm = messages_memory[i];
 			const auto& text = data.texts[i];
 			auto style_guard = apply_style(font, text);
 
 			int x = text.position_x;
 			int y = text.position_y;
-			for (const auto& line: pm.GetLines()) {
+			for (const auto& line : pm.GetLines()) {
 				std::u32string line32;
 				auto* text_index = line.data();
 				const auto* end = line.data() + line.size();
@@ -298,13 +327,13 @@ void Game_Windows::Window_User::Refresh(bool& async_wait) {
 
 						// Special message codes
 						switch (ch) {
-							case 'c':
-							case 'C':
-							{
-								// Color
-								text_index = Game_Message::ParseColor(text_index, end, Player::escape_char, true).next;
-							}
-							break;
+						case 'c':
+						case 'C':
+						{
+							// Color
+							text_index = Game_Message::ParseColor(text_index, end, Player::escape_char, true).next;
+						}
+						break;
 						}
 						continue;
 					}
@@ -331,7 +360,8 @@ void Game_Windows::Window_User::Refresh(bool& async_wait) {
 		if (data.flags.border_margin) {
 			x_max += 16;
 			y_max += 20; // 16 looks better but this matches better with Maniac Patch
-		} else {
+		}
+		else {
 			x_max += 1;
 			y_max += 1;
 		}
@@ -357,7 +387,8 @@ void Game_Windows::Window_User::Refresh(bool& async_wait) {
 	BitmapRef system;
 	if (!data.system_name.empty()) {
 		system = Cache::System(data.system_name);
-	} else {
+	}
+	else {
 		system = Cache::SystemOrBlack();
 	}
 
@@ -375,23 +406,32 @@ void Game_Windows::Window_User::Refresh(bool& async_wait) {
 	// Draw text
 	for (size_t i = 0; i < data.texts.size(); ++i) {
 		auto& font = fonts[i];
-		const auto& pm = messages[i];
+		const auto& pm = messages_memory[i];
 		const auto& text = data.texts[i];
 		auto style_guard = apply_style(font, text);
 
 		int x = text.position_x;
 		int y = text.position_y + 2; // +2 to match the offset RPG_RT uses
 		int text_color = 0;
-		for (const auto& line: pm.GetLines()) {
+		for (const auto& line : pm.GetLines()) {
+
+			skippedSomething = false;
+
 			std::u32string line32;
 			auto* text_index = line.data();
 			const auto* end = line.data() + line.size();
 
+			char lastChar = ' ';
 			while (text_index != end) {
 				auto tret = Utils::TextNext(text_index, end, Player::escape_char);
 				text_index = tret.next;
 
 				if (EP_UNLIKELY(!tret)) {
+					continue;
+				}
+
+				if (stepByStepDisplay && currentDisplay > maxDisplay) {
+					skippedSomething = true;
 					continue;
 				}
 
@@ -426,35 +466,67 @@ void Game_Windows::Window_User::Refresh(bool& async_wait) {
 
 					// Special message codes
 					switch (ch) {
-						case 'c':
-						case 'C':
-						{
-							// Color
-							auto pres = Game_Message::ParseColor(text_index, end, Player::escape_char, true);
-							auto value = pres.value;
-							text_index = pres.next;
-							text_color = value > 19 ? 0 : value;
-						}
+					case 'c':
+					case 'C':
+					{
+						// Color
+						auto pres = Game_Message::ParseColor(text_index, end, Player::escape_char, true);
+						auto value = pres.value;
+						text_index = pres.next;
+						text_color = value > 19 ? 0 : value;
+					}
+					break;
+					case 'm':
+					{
+						stepByStepDisplay = !stepByStepDisplay;
 						break;
+					}
 					}
 					continue;
 				}
 
 				line32 += static_cast<char32_t>(ch);
-			}
+				if (stepByStepDisplay)
+					currentDisplay++;
 
-			if (!line32.empty()) {
+				lastChar = ch;
+			}
+			if (!stepByStepDisplay || displayAll) {
 				Text::Draw(*window->GetContents(), x, y, *font, *system, text_color, Utils::EncodeUTF(line32));
+			}
+			else {
+				if (!line32.empty()) {
+
+					if (currentDisplay < maxDisplay) {
+						Text::Draw(*window->GetContents(), x, y, *font, *system, text_color, Utils::EncodeUTF(line32));
+					}
+					else {
+						std::string l32 = Utils::EncodeUTF(line32);
+						l32.resize(l32.size() - 1);
+						Text::Draw(*window->GetContents(), x, y, *font, *system, text_color, l32);
+
+						int mw = Text::GetSize(*font, l32).width;
+
+						std::string c = std::string(1, lastChar);
+						auto r = Text::GetSize(*font, c);
+						int w = r.width;
+						int h = r.height;
+						Rect dest = { x + mw - w / 2,y - h / 2,w * 2,h * 2 };
+
+						auto bmp = Bitmap::Create(w, h, true);
+						Text::Draw(*bmp, 0, 0, *font, *system, text_color, c);
+						window->GetContents()->StretchBlit(dest, *bmp, r, Opacity::Opaque());
+					}
+
+				}
 			}
 
 			x = 0;
 			y += text.font_size + text.line_spacing;
 		}
 	}
-
-	// Add to picture
-	auto& pic = Main_Data::game_pictures->GetPicture(data.ID);
-	pic.AttachWindow(*window);
+	if (!skippedSomething)
+		displayAll = true;
 }
 
 bool Game_Windows::Window_User::Request() {

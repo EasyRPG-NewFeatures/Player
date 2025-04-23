@@ -25,6 +25,7 @@
 #include <lcf/rpg/system.h>
 #include "game_pictures.h"
 #include "window_selectable.h"
+#include "pending_message.h"
 
 /*
 FIXME:
@@ -81,6 +82,7 @@ public:
 		void Erase();
 
 		void Refresh(bool& async_wait);
+		void RefreshText();
 
 		/**
 		 * Does an Async request of all assets.
@@ -91,6 +93,10 @@ public:
 
 		std::unique_ptr<Window_Selectable> window;
 		std::vector<FileRequestBinding> request_ids;
+
+		int maxDisplay = -1;
+		bool displayAll = false;
+		std::vector<PendingMessage> messages_memory;
 	};
 
 	Window_User& GetWindow(int id);

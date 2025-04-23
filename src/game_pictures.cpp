@@ -595,6 +595,11 @@ void Game_Pictures::Picture::Update(bool is_battle) {
 			}
 		}
 	}
+
+	if (IsWindowAttached()) {
+		sprite->GetBitmap()->Clear();
+		Main_Data::game_windows->GetWindow(data.ID).RefreshText();
+	}
 }
 
 void Game_Pictures::Update(bool is_battle) {
