@@ -416,6 +416,9 @@ void Game_Windows::Window_User::RefreshText() {
 		int x = text.position_x;
 		int y = text.position_y + 2; // +2 to match the offset RPG_RT uses
 		int text_color = 0;
+
+		int currentLine = 0;
+
 		for (const auto& line : pm.GetLines()) {
 
 			skippedSomething = false;
@@ -501,7 +504,7 @@ void Game_Windows::Window_User::RefreshText() {
 				lastChar = ch;
 			}
 			if (!stepByStepDisplay || displayAll) {
-				if (lastCharZoom && i == data.texts.size() - 1) {
+				if (lastCharZoom && i == data.texts.size() - 1 && currentLine == pm.GetLines().size() - 1) {
 					std::string l32 = Utils::EncodeUTF(line32);
 					l32.resize(l32.size() - 1);
 					Text::Draw(*window->GetContents(), x, y, *font, *system, text_color, l32);
@@ -549,6 +552,7 @@ void Game_Windows::Window_User::RefreshText() {
 
 			x = 0;
 			y += text.font_size + text.line_spacing;
+			currentLine++;
 		}
 	}
 	if (!skippedSomething)
