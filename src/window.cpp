@@ -57,6 +57,10 @@ void Window::SetCloseAnimation(int frames) {
 	}
 }
 
+int Window::GetCloseAnimation() {
+	return animation_frames;
+}
+
 void Window::Draw(Bitmap& dst) {
 	if (width <= 0 || height <= 0) return;
 	if (x < -width || x > dst.GetWidth() || y < -height || y > dst.GetHeight()) return;

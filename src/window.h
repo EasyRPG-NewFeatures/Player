@@ -79,6 +79,7 @@ public:
 	void SetContentsOpacity(int ncontents_opacity);
 	void SetOpenAnimation(int frames);
 	void SetCloseAnimation(int frames);
+	int GetCloseAnimation();
 
 	bool IsOpening() const;
 	bool IsClosing() const;

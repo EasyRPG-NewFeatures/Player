@@ -23,6 +23,7 @@
 #include "main_data.h"
 #include <lcf/reader_util.h>
 #include <cassert>
+#include <output.h>
 
 Game_CommonEvent::Game_CommonEvent(int common_event_id) :
 	common_event_id(common_event_id)
@@ -31,6 +32,17 @@ Game_CommonEvent::Game_CommonEvent(int common_event_id) :
 
 	if (ce->trigger == lcf::rpg::EventPage::Trigger_parallel
 			&& !ce->event_commands.empty()) {
+		interpreter.reset(new Game_Interpreter_Map());
+		interpreter->Push(this);
+	}
+
+
+}
+
+void Game_CommonEvent::ForceCreate(int common_event_id) {
+	auto* ce = lcf::ReaderUtil::GetElement(lcf::Data::commonevents, common_event_id);
+
+	if (!ce->event_commands.empty()) {
 		interpreter.reset(new Game_Interpreter_Map());
 		interpreter->Push(this);
 	}
@@ -51,6 +63,20 @@ void Game_CommonEvent::SetSaveData(const lcf::rpg::SaveEventExecState& data) {
 
 AsyncOp Game_CommonEvent::Update(bool resume_async) {
 	if (interpreter && IsWaitingBackgroundExecution(resume_async)) {
+		assert(interpreter->IsRunning());
+		interpreter->Update(!resume_async);
+
+		// Suspend due to async op ...
+		if (interpreter->IsAsyncPending()) {
+			return interpreter->GetAsyncOp();
+		}
+	}
+
+	return {};
+}
+
+AsyncOp Game_CommonEvent::ForceUpdate(bool resume_async) {
+	if (interpreter) {
 		assert(interpreter->IsRunning());
 		interpreter->Update(!resume_async);
 

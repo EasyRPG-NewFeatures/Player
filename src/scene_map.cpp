@@ -537,7 +537,8 @@ int* Scene_Map::GetWindowMessage(){
 }
 void Scene_Map::Reset_MessageWindow(int x, int y, int w, int h) {
 
-	message_window.reset(new Window_Message(x, y, w, h));
-
-	Game_Message::SetWindow(message_window.get());
+	// Todo Rework this
+	//message_window.reset(new Window_Message(x, y, w, h));
+	//Game_Message::SetWindow(message_window.get());
+	message_window->ChangeSizePosition(x, y, w, h);
 }

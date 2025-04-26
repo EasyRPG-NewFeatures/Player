@@ -43,6 +43,9 @@ public:
 		TopMargin = 8
 	};
 
+
+	void ChangeSizePosition(int x, int y, int w, int h);
+
 	/**
 	 * Starts message processing by reading all
 	 * non-displayed from Game_Message.
@@ -138,6 +141,8 @@ public:
 	 **/
 	void SetMaxLinesPerPage(int lines);
 
+	void CallCommonEventCharacter(char32_t ch);
+	
 protected:
 	/** Async operation */
 	AsyncOp aop;

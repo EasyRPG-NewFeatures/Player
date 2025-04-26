@@ -443,6 +443,10 @@ public:
 	int userTextID[16] = { 0 };
 	bool FirstCall = false;
 
+	int faceX = 16;
+	int faceY = 16;
+
+
 private:
 	std::string InelukiReadLink(Filesystem_Stream::InputStream& stream);
 

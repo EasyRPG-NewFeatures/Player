@@ -39,6 +39,8 @@ public:
 	 */
 	explicit Game_CommonEvent(int common_event_id);
 
+	void ForceCreate(int common_event_id);
+
 	/**
 	 * Set savegame data.
 	 *
@@ -53,6 +55,8 @@ public:
 	 * @return async operation if we should suspend, otherwise returns AsyncOp::eNone
 	 */
 	AsyncOp Update(bool resume_async);
+
+	AsyncOp ForceUpdate(bool resume_async);
 
 	/**
 	 * Gets common event index.
