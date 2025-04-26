@@ -77,8 +77,7 @@ AsyncOp Game_CommonEvent::Update(bool resume_async) {
 
 void Game_CommonEvent::ForceCreateNoCheck(int ce_ID) {
 	auto* ce = lcf::ReaderUtil::GetElement(lcf::Data::commonevents, ce_ID);
-
-	
+	if (ce)
 	{
 		interpreter.reset(new Game_Interpreter_Map());
 		interpreter->Push(this);

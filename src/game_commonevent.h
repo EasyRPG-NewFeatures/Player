@@ -68,10 +68,8 @@ public:
 	 * @return async operation if we should suspend, otherwise returns AsyncOp::eNone
 	 */
 	AsyncOp ForceUpdate(bool resume_async);
-	void ForceCreate(int ce_ID);
 
 	void ForceCreateNoCheck(int ce_ID);
-	AsyncOp ForceUpdate(bool resume_async);
 
 	/**
 	 * Gets common event index.
