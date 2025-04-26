@@ -136,14 +136,16 @@ Window_Message::~Window_Message() {
 }
 
 void Window_Message::ChangeSizePosition(int x, int y, int w, int h) {
-	auto bmp = Bitmap::Create(w - 16, h - 16);
-	Rect r = { 0,0,GetContents()->GetWidth(),GetContents()->GetHeight() };
-	
-	bmp->Blit(0, 0, *GetContents(), r, Opacity::Opaque());
-	SetContents(bmp);
-	SetWidth(w);
-	SetHeight(h);
-	ResetWindow();
+	if (w > 0 && h > 0) {
+		auto bmp = Bitmap::Create(w - 16, h - 16);
+		Rect r = { 0,0,GetContents()->GetWidth(),GetContents()->GetHeight() };
+
+		bmp->Blit(0, 0, *GetContents(), r, Opacity::Opaque());
+		SetContents(bmp);
+		SetWidth(w);
+		SetHeight(h);
+		ResetWindow();
+	}
 }
 
 void Window_Message::StartMessageProcessing(PendingMessage pm) {
@@ -209,7 +211,7 @@ void Window_Message::StartMessageProcessing(PendingMessage pm) {
 	DebugLog("{}: MSG START OPEN {}", open_frames);
 
 	/* Maniacs control message*/
-	int common_evt_id = Main_Data::game_system->commonEventID[1];
+	int common_evt_id = Main_Data::game_system->controlMessageEventID[1];
 	if (common_evt_id > 0) {
 		if (!Main_Data::game_system->FirstCall) {
 			Game_CommonEvent* common_event = lcf::ReaderUtil::GetElement(Game_Map::GetCommonEvents(), common_evt_id);
@@ -220,9 +222,9 @@ void Window_Message::StartMessageProcessing(PendingMessage pm) {
 
 				common_event->ForceCreate(common_evt_id);
 
-				int varID = Main_Data::game_system->systemVarID[1];
-				int strID = Main_Data::game_system->systemTextID[1];
-				int strUserID = Main_Data::game_system->userTextID[1];
+				int varID = Main_Data::game_system->controlMessageSystemVarID[1];
+				int strID = Main_Data::game_system->controlMessageSystemTextID[1];
+				int strUserID = Main_Data::game_system->controlMessageUserTextID[1];
 
 				int x = 0;
 				int y = 0;
@@ -379,7 +381,7 @@ void Window_Message::InsertNewPage() {
 		y = Player::screen_height - Player::menu_offset_y - GetHeight() ;
 	}
 	else if (Game_Message::GetRealPosition() == -1) {
-		int varID = Main_Data::game_system->systemVarID[1];
+		int varID = Main_Data::game_system->controlMessageSystemVarID[1];
 		x = Main_Data::game_variables->Get(varID + 1);
 		y = Main_Data::game_variables->Get(varID + 2);
 	}
@@ -397,7 +399,7 @@ void Window_Message::InsertNewPage() {
 	}
 
 	if (IsFaceEnabled()) {
-		if (Main_Data::game_system->commonEventID[1] > 0 || Main_Data::game_system->commonEventID[2] > 0 || Main_Data::game_system->commonEventID[3] > 0) {
+		if (Main_Data::game_system->controlMessageEventID[1] > 0 || Main_Data::game_system->controlMessageEventID[2] > 0 || Main_Data::game_system->controlMessageEventID[3] > 0) {
 			contents_x = LeftMargin + FaceSize + RightFaceMargin;
 			DrawFace(Main_Data::game_system->GetMessageFaceName(), Main_Data::game_system->GetMessageFaceIndex(), Main_Data::game_system->faceX, Main_Data::game_system->faceY, Main_Data::game_system->IsMessageFaceFlipped());
 		}
@@ -493,7 +495,7 @@ void Window_Message::FinishMessageProcessing() {
 	DebugLog("{}: MSG START CLOSE {}", close_frames);
 
 	/* Maniacs control message*/
-	int common_evt_id = Main_Data::game_system->commonEventID[2];
+	int common_evt_id = Main_Data::game_system->controlMessageEventID[2];
 	if (common_evt_id > 0) {
 
 		Game_CommonEvent* common_event = lcf::ReaderUtil::GetElement(Game_Map::GetCommonEvents(), common_evt_id);
@@ -504,7 +506,7 @@ void Window_Message::FinishMessageProcessing() {
 
 			common_event->ForceCreate(common_evt_id);
 
-			int varID = Main_Data::game_system->systemVarID[2];
+			int varID = Main_Data::game_system->controlMessageSystemVarID[2];
 
 			int x = 0;
 			int y = 0;
@@ -805,6 +807,18 @@ void Window_Message::UpdateMessage() {
 				SetWaitForNonPrintable(61);
 				DebugLogText("{}: MSG Sleep \\|");
 				break;
+			case 'e':
+			{
+
+				auto pres = Game_Message::ParseUserEvent(text_index, end, Player::escape_char, true);
+				auto value = pres.value;
+				text_index = pres.next;
+				CallUserEvent(value, text_index);
+
+				SetWaitForNonPrintable(speed);
+
+			}
+				break;
 			default:
 				// Unknown characters will not display anything but do wait.
 				SetWaitForNonPrintable(speed);
@@ -850,10 +864,9 @@ void Window_Message::UpdateMessage() {
 	}
 }
 
-void Window_Message::CallCommonEventCharacter(char32_t ch) {
-
+void Window_Message::CallUserEvent(int id, const char* text_prev) {
 	/* Maniacs control message*/
-	int common_evt_id = Main_Data::game_system->commonEventID[3];
+	int common_evt_id = Main_Data::game_system->controlMessageEventID[0];
 	if (common_evt_id > 0) {
 
 		Game_CommonEvent* common_event = lcf::ReaderUtil::GetElement(Game_Map::GetCommonEvents(), common_evt_id);
@@ -864,8 +877,81 @@ void Window_Message::CallCommonEventCharacter(char32_t ch) {
 
 			common_event->ForceCreate(common_evt_id);
 
-			int varID = Main_Data::game_system->systemVarID[3];
-			int stringID = Main_Data::game_system->systemTextID[3];
+			int varID = Main_Data::game_system->controlMessageSystemVarID[0];
+			int varUserID = Main_Data::game_system->controlMessageUserVarID[0];
+			int stringID = Main_Data::game_system->controlMessageUserTextID[0];
+
+			int x = 0;
+			int y = 0;
+			int w = 0;
+			int h = 0;
+
+			auto st = Scene::instance->type;
+			if (st == Scene::Map) {
+				Scene_Map* scene = (Scene_Map*)Scene::Find(Scene::Map).get();
+				auto r = scene->GetWindowMessage();
+				x = r[0];
+				y = r[1];
+				w = r[2];
+				h = r[3];
+
+				int face_x = Main_Data::game_system->faceX;
+				int face_y = Main_Data::game_system->faceY;
+
+				Main_Data::game_variables->Set(varID + 0, 1);
+
+				Main_Data::game_variables->Set(varID + 1, x);
+				Main_Data::game_variables->Set(varID + 2, y);
+				Main_Data::game_variables->Set(varID + 3, face_x);
+				Main_Data::game_variables->Set(varID + 4, face_y);
+				Main_Data::game_variables->Set(varID + 5, line_count);
+				Main_Data::game_variables->Set(varID + 6, contents_x);
+				Main_Data::game_variables->Set(varID + 7, contents_y);
+
+				Main_Data::game_variables->Set(varUserID, id);
+
+				Game_Map::GetInterpreter().Push(common_event);
+				bool b = true;
+				common_event->ForceUpdate(b);
+
+				x = Main_Data::game_variables->Get(varID + 1);
+				y = Main_Data::game_variables->Get(varID + 2);
+				face_x = Main_Data::game_variables->Get(varID + 3);
+				face_y = Main_Data::game_variables->Get(varID + 4);
+				Main_Data::game_system->faceX = face_x;
+				Main_Data::game_system->faceY = face_y;
+
+				std::string out = Main_Data::game_strings->Get(stringID).data();
+				const char* base = reinterpret_cast<const char*>(text.data());
+				size_t character_index = static_cast<size_t>(text_prev - base);
+				text.insert(character_index, out);
+
+				Main_Data::game_system->SetMessagePositionFixed(true);
+				Main_Data::game_system->SetMessagePosition(-1);
+				scene->Reset_MessageWindow(x, y, -1, -1);
+
+			}
+
+		}
+	}
+}
+
+void Window_Message::CallCommonEventCharacter(char32_t ch) {
+
+	/* Maniacs control message*/
+	int common_evt_id = Main_Data::game_system->controlMessageEventID[3];
+	if (common_evt_id > 0) {
+
+		Game_CommonEvent* common_event = lcf::ReaderUtil::GetElement(Game_Map::GetCommonEvents(), common_evt_id);
+		if (!common_event) {
+			Output::Warning("CallEvent: Can't call invalid common event {}", common_evt_id);
+		}
+		else {
+
+			common_event->ForceCreate(common_evt_id);
+
+			int varID = Main_Data::game_system->controlMessageSystemVarID[3];
+			int stringID = Main_Data::game_system->controlMessageSystemTextID[3];
 
 			int x = 0;
 			int y = 0;
@@ -916,7 +1002,6 @@ void Window_Message::CallCommonEventCharacter(char32_t ch) {
 
 				Main_Data::game_strings->Asg(str_params, s);
 
-				// Une grosse partie des bugs restant provienne surement de la
 				Game_Map::GetInterpreter().Push(common_event);
 				bool b = true;
 				common_event->ForceUpdate(b);

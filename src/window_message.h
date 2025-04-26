@@ -142,7 +142,8 @@ public:
 	void SetMaxLinesPerPage(int lines);
 
 	void CallCommonEventCharacter(char32_t ch);
-	
+	void CallUserEvent(int id, const char* text_prev);
+
 protected:
 	/** Async operation */
 	AsyncOp aop;

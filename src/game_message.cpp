@@ -362,6 +362,10 @@ Game_Message::ParseParamResult Game_Message::ParseColor(const char* iter, const 
 	return ParseParam('C', 'c', iter, end, escape_char, skip_prefix, max_recursion);
 }
 
+Game_Message::ParseParamResult Game_Message::ParseUserEvent(const char* iter, const char* end, uint32_t escape_char, bool skip_prefix, int max_recursion) {
+	return ParseParam('E', 'e', iter, end, escape_char, skip_prefix, max_recursion);
+}
+
 Game_Message::ParseParamResult Game_Message::ParseSpeed(const char* iter, const char* end, uint32_t escape_char, bool skip_prefix, int max_recursion) {
 	return ParseParam('S', 's', iter, end, escape_char, skip_prefix, max_recursion);
 }

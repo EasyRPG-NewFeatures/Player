@@ -915,7 +915,7 @@ bool Game_Interpreter::CommandShowMessage(lcf::rpg::EventCommand const& com) { /
 	}
 	/* Maniacs control message*/
 	// Move code to Window_Message->StartMessageProcessing()
-	int common_evt_id = Main_Data::game_system->commonEventID[1];
+	int common_evt_id = Main_Data::game_system->controlMessageEventID[1];
 	if (common_evt_id > 0) {
 		// Disable the first call
 		Main_Data::game_system->FirstCall = false;
@@ -1021,7 +1021,7 @@ void Game_Interpreter::SetupChoices(const std::vector<std::string>& choices, int
 	// Set choices to message text
 	pm.SetChoiceResetColors(false);
 	for (int i = 0; i < Game_Message::GetMaxLine() && i < static_cast<int>(choices.size()); i++) {
-		if (choices[i] != "" ||i < 4)
+		if (choices[i] != "" ||i < 3)
 			pm.PushChoice(choices[i]);
 	}
 
@@ -5264,18 +5264,18 @@ bool Game_Interpreter::CommandManiacControlMessage(lcf::rpg::EventCommand const&
 		int t = (hookType >> i) & 1;
 
 		if (t == 1) {
-			Main_Data::game_system->commonEventID[i] = com.parameters[2];
-			Main_Data::game_system->systemVarID[i] = com.parameters[3];
-			Main_Data::game_system->systemTextID[i] = com.parameters[4];
-			Main_Data::game_system->userVarID[i] = com.parameters[5];
-			Main_Data::game_system->userTextID[i] = com.parameters[6];
+			Main_Data::game_system->controlMessageEventID[i] = com.parameters[2];
+			Main_Data::game_system->controlMessageSystemVarID[i] = com.parameters[3];
+			Main_Data::game_system->controlMessageSystemTextID[i] = com.parameters[4];
+			Main_Data::game_system->controlMessageUserVarID[i] = com.parameters[5];
+			Main_Data::game_system->controlMessageUserTextID[i] = com.parameters[6];
 		}
 		else {
-			Main_Data::game_system->commonEventID[i] = 0;
-			Main_Data::game_system->systemVarID[i] = 0;
-			Main_Data::game_system->systemTextID[i] = 0;
-			Main_Data::game_system->userVarID[i] = 0;
-			Main_Data::game_system->userTextID[i] = 0;
+			Main_Data::game_system->controlMessageEventID[i] = 0;
+			Main_Data::game_system->controlMessageSystemVarID[i] = 0;
+			Main_Data::game_system->controlMessageSystemTextID[i] = 0;
+			Main_Data::game_system->controlMessageUserVarID[i] = 0;
+			Main_Data::game_system->controlMessageUserTextID[i] = 0;
 		}
 
 	}

@@ -436,11 +436,11 @@ public:
 	/** @return Whether the game was loaded from a savegame in the current frame */
 	bool IsLoadedThisFrame() const;
 
-	int commonEventID[16] = {0};
-	int systemVarID[16] = { 0 };
-	int systemTextID[16] = { 0 };
-	int userVarID[16] = { 0 };
-	int userTextID[16] = { 0 };
+	int controlMessageEventID[16] = {0};
+	int controlMessageSystemVarID[16] = { 0 };
+	int controlMessageSystemTextID[16] = { 0 };
+	int controlMessageUserVarID[16] = { 0 };
+	int controlMessageUserTextID[16] = { 0 };
 	bool FirstCall = false;
 
 	int faceX = 16;
