@@ -134,6 +134,8 @@ bool Game_Windows::Window_User::Create(const WindowParams& params) {
 	maxDisplay = -1;
 	displayAll = false;
 
+	messages_memory.clear();
+
 	return true;
 }
 
@@ -188,6 +190,7 @@ void Game_Windows::Window_User::RefreshText() {
 		maxDisplay++;
 
 	bool stepByStepDisplay = false;
+	bool lastCharZoom = false;
 
 	int currentDisplay = -1;
 
@@ -481,6 +484,12 @@ void Game_Windows::Window_User::RefreshText() {
 						stepByStepDisplay = !stepByStepDisplay;
 						break;
 					}
+					break;
+					case 'M':
+					{
+						lastCharZoom = !lastCharZoom;
+						break;
+					}
 					}
 					continue;
 				}
@@ -492,7 +501,24 @@ void Game_Windows::Window_User::RefreshText() {
 				lastChar = ch;
 			}
 			if (!stepByStepDisplay || displayAll) {
-				Text::Draw(*window->GetContents(), x, y, *font, *system, text_color, Utils::EncodeUTF(line32));
+				if (lastCharZoom && i == data.texts.size() - 1) {
+					std::string l32 = Utils::EncodeUTF(line32);
+					l32.resize(l32.size() - 1);
+					Text::Draw(*window->GetContents(), x, y, *font, *system, text_color, l32);
+
+					int mw = Text::GetSize(*font, l32).width;
+
+					std::string c = std::string(1, lastChar);
+					auto r = Text::GetSize(*font, c);
+					int w = r.width;
+					int h = r.height;
+					Rect dest = { x + mw - w / 2,y - h / 2,w * 2,h * 2 };
+
+					auto bmp = Bitmap::Create(w, h, true);
+					Text::Draw(*bmp, 0, 0, *font, *system, text_color, c);
+					window->GetContents()->StretchBlit(dest, *bmp, r, Opacity::Opaque());
+				} else 
+					Text::Draw(*window->GetContents(), x, y, *font, *system, text_color, Utils::EncodeUTF(line32));
 			}
 			else {
 				if (!line32.empty()) {
