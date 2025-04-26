@@ -102,12 +102,6 @@ AsyncOp Game_CommonEvent::ForceUpdate(bool resume_async) {
 	return {};
 }
 
-AsyncOp Game_CommonEvent::UpdateBattle(bool resume_async, int ce_ID) {
-	if (interpreter) {
-		assert(interpreter->IsRunning());
-		interpreter->Update(!resume_async);
-	}
-}
 void Game_CommonEvent::KillCE() {
 	if (interpreter_pp) {
 		interpreter_pp->Clear();
