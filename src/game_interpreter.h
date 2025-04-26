@@ -107,6 +107,8 @@ public:
 	/** @return true if wait command (time or key) is active. Used by 2k3 battle system */
 	bool IsWaitingForWaitCommand() const;
 
+	int NextCommand();
+
 protected:
 	static constexpr int loop_limit = 1000000;
 	static constexpr int call_stack_limit = 1000;

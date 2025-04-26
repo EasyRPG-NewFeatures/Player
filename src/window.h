@@ -87,9 +87,11 @@ public:
 	void SetContentsOpacity(int ncontents_opacity);
 	void SetOpenAnimation(int frames);
 	void SetCloseAnimation(int frames);
+
 	Scene* GetScene() const;
 	void SetScene(Scene* scene);
 	WindowType GetType() const;
+	int GetCloseAnimation();
 
 	bool IsOpening() const;
 	bool IsClosing() const;

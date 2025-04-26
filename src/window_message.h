@@ -43,6 +43,9 @@ public:
 		TopMargin = 8
 	};
 
+
+	void ChangeSizePosition(int x, int y, int w, int h);
+
 	/**
 	 * Starts message processing by reading all
 	 * non-displayed from Game_Message.
@@ -141,6 +144,9 @@ public:
 	virtual bool ExcludeForMouse() const {
 		return true;
 	}
+	void CallCommonEventCharacter(char32_t ch);
+	void CallUserEvent(int id, const char* text_prev);
+
 
 protected:
 	/** Async operation */

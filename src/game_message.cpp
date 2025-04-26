@@ -362,6 +362,10 @@ Game_Message::ParseParamResult Game_Message::ParseColor(const char* iter, const 
 	return ParseParam('C', 'c', iter, end, escape_char, skip_prefix, max_recursion);
 }
 
+Game_Message::ParseParamResult Game_Message::ParseUserEvent(const char* iter, const char* end, uint32_t escape_char, bool skip_prefix, int max_recursion) {
+	return ParseParam('E', 'e', iter, end, escape_char, skip_prefix, max_recursion);
+}
+
 Game_Message::ParseParamResult Game_Message::ParseSpeed(const char* iter, const char* end, uint32_t escape_char, bool skip_prefix, int max_recursion) {
 	return ParseParam('S', 's', iter, end, escape_char, skip_prefix, max_recursion);
 }
@@ -371,8 +375,11 @@ Game_Message::ParseParamResult Game_Message::ParseActor(const char* iter, const 
 }
 
 int Game_Message::GetMaxLine() {
+	int output = 0;
 	if (window->GetHeight() == MESSAGE_BOX_HEIGHT)
-		return 4;
-	// return window->GetMaxLinesPerPage();
-	 return (window->GetHeight() - 16 ) / 16;
+		output = 4;
+	else
+		output = (window->GetHeight() - 16 ) / 16;
+
+	return output + 1; //workaround to make last choice selectable when 4 lines.
 }

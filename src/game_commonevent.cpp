@@ -40,18 +40,14 @@ Game_CommonEvent::Game_CommonEvent(int common_event_id) :
 
 }
 
-void Game_CommonEvent::ForceCreate(int ce_ID) {
-	auto* ce = lcf::ReaderUtil::GetElement(lcf::Data::commonevents, ce_ID);
+void Game_CommonEvent::ForceCreate(int common_event_id) {
+	auto* ce = lcf::ReaderUtil::GetElement(lcf::Data::commonevents, common_event_id);
 
-	if ((ce->trigger == lcf::rpg::EventPage::Trigger_parallel || ce->trigger == 7 || ce->trigger == 6 || ce->ID == ManiacsBattle::Get_ATBCE()
-		|| ce->ID == ManiacsBattle::Get_TargetCE() || ce->ID == ManiacsBattle::Get_DamageCE() || ce->ID == ManiacsBattle::Get_StateCE()
-		|| ce->ID == ManiacsBattle::Get_StatsCE())
-		&& !ce->event_commands.empty())
-	{
-		bool main_flag = false;
-		interpreter_pp.reset(new Game_Interpreter_Battle(main_flag));
-		interpreter_pp->Push(this);
+	if (!ce->event_commands.empty()) {
+		interpreter.reset(new Game_Interpreter_Map());
+		interpreter->Push(this);
 	}
+
 }
 
 void Game_CommonEvent::SetSaveData(const lcf::rpg::SaveEventExecState& data) {
@@ -88,6 +84,7 @@ void Game_CommonEvent::ForceCreateNoCheck(int ce_ID) {
 		interpreter->Push(this);
 	}
 }
+
 AsyncOp Game_CommonEvent::ForceUpdate(bool resume_async) {
 	if (interpreter) {
 		assert(interpreter->IsRunning());

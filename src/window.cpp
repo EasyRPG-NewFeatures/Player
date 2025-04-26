@@ -80,6 +80,9 @@ void Window::SetScene(Scene* scene) {
 		scene->RegisterWindow(this);
 	}
 }
+int Window::GetCloseAnimation() {
+	return animation_frames;
+}
 
 void Window::Draw(Bitmap& dst) {
 	if (width <= 0 || height <= 0) return;

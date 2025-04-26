@@ -184,6 +184,21 @@ namespace Game_Message {
 	 */
 	ParseParamResult ParseActor(const char* iter, const char* end, uint32_t escape_char, bool skip_prefix = false, int max_recursion = default_max_recursion);
 
+
+	/** Parse a \e[] User command ( Maniacs Control Message )
+	 *
+	 * @param iter start of utf8 string
+	 * @param end end of utf8 string
+	 * @param escape_char the escape character to use
+	 * @param skip_prefix if true, assume prefix was already parsed and iter starts at the first left bracket.
+	 * @param max_recursion How many times to allow recursive variable lookups.
+	 *
+	 * @return \refer ParseParamResult
+	 */
+	ParseParamResult ParseUserEvent(const char* iter, const char* end, uint32_t escape_char, bool skip_prefix = false, int max_recursion = default_max_recursion);
+
+	
+
 	Game_Message::ParseParamResult ParseParam(char upper, char lower, const char* iter, const char* end, uint32_t escape_char, bool skip_prefix = false, int max_recursion = default_max_recursion);
 	// same as ParseParam but the parameter is of structure \x[some_word] instead of \x[1]
 	Game_Message::ParseParamStringResult ParseStringParam(char upper, char lower, const char* iter, const char* end, uint32_t escape_char, bool skip_prefix = false, int max_recursion = default_max_recursion);

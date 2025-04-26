@@ -40,6 +40,8 @@ public:
 	 */
 	explicit Game_CommonEvent(int common_event_id);
 
+	void ForceCreate(int common_event_id);
+
 	/**
 	 * Set savegame data.
 	 *
@@ -69,6 +71,8 @@ public:
 	void ForceCreate(int ce_ID);
 
 	void ForceCreateNoCheck(int ce_ID);
+	AsyncOp ForceUpdate(bool resume_async);
+
 	/**
 	 * Gets common event index.
 	 *
