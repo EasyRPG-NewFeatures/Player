@@ -214,6 +214,77 @@ bool Game_Battler::UseItem(int item_id, const Game_Battler* source) {
 	return false;
 }
 
+bool Game_Battler::UseItem(Game_Item* item, const Game_Battler* source) {
+	if (item == NULL) {
+		Output::Warning("UseItem: Can't use invalid item");
+		return false;
+	}
+
+	if (item->GetItemSave()->type == lcf::rpg::Item::Type_medicine) {
+		bool was_used = false;
+		int revived = 0;
+		int hp_change = item->GetItemSave()->recover_hp_rate * GetMaxHp() / 100 + item->GetItemSave()->recover_hp;
+		int sp_change = item->GetItemSave()->recover_sp_rate * GetMaxSp() / 100 + item->GetItemSave()->recover_sp;
+
+		if (IsDead()) {
+			// Check if item can revive
+			if (item->GetItemSave()->state_set.empty() || !item->GetItemSave()->state_set[0]) {
+				return false;
+			}
+		}
+		else if (item->GetItemSave()->ko_only) {
+			// Must be dead
+			return false;
+		}
+
+		for (int i = 0; i < (int)item->GetItemSave()->state_set.size(); i++) {
+			if (item->GetItemSave()->state_set[i]) {
+				was_used |= HasState(lcf::Data::states[i].ID);
+				if (i == 0 && HasState(i + 1))
+					revived = 1;
+				RemoveState(lcf::Data::states[i].ID, false);
+			}
+		}
+
+		if (hp_change > 0 && !HasFullHp()) {
+			ChangeHp(hp_change - revived, false);
+			was_used = true;
+		}
+
+		if (sp_change > 0 && !HasFullSp()) {
+			ChangeSp(sp_change);
+			was_used = true;
+		}
+
+		return was_used;
+	}
+
+	if (item->GetItemSave()->type == lcf::rpg::Item::Type_switch) {
+		return true;
+	}
+
+	bool do_skill = (item->GetItemSave()->type == lcf::rpg::Item::Type_special)
+		|| (item->GetItemSave()->use_skill && (
+			item->GetItemSave()->type == lcf::rpg::Item::Type_weapon
+			|| item->GetItemSave()->type == lcf::rpg::Item::Type_shield
+			|| item->GetItemSave()->type == lcf::rpg::Item::Type_armor
+			|| item->GetItemSave()->type == lcf::rpg::Item::Type_helmet
+			|| item->GetItemSave()->type == lcf::rpg::Item::Type_accessory
+			)
+			);
+
+	if (do_skill) {
+		auto* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->GetItemSave()->skill_id);
+		if (skill == nullptr) {
+			Output::Warning("UseItem: Can't use item {} skill with invalid ID {}", item->GetItemSave()->ID, item->GetItemSave()->skill_id);
+			return false;
+		}
+		return UseSkill(item->GetItemSave()->skill_id, source);
+	}
+
+	return false;
+}
+
 bool Game_Battler::UseSkill(int skill_id, const Game_Battler* source) {
 	const lcf::rpg::Skill* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, skill_id);
 	if (!skill) {

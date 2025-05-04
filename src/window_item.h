@@ -41,12 +41,15 @@ public:
 	 */
 	const lcf::rpg::Item* GetItem() const;
 
+	Game_Item* GetItemU();
+
 	/**
 	 * Checks if the item should be in the list.
 	 *
 	 * @param item_id item to check.
 	 */
 	virtual bool CheckInclude(int item_id);
+	virtual bool CheckInclude(Game_Item* item);
 
 	/**
 	 * Checks if item should be enabled.
@@ -54,6 +57,7 @@ public:
 	 * @param item_id item to check.
 	 */
 	virtual bool CheckEnable(int item_id);
+	virtual bool CheckEnableU(Game_Item* item);
 
 	/**
 	 * Refreshes the item list.
@@ -80,6 +84,7 @@ public:
 
 private:
 	std::vector<int> data;
+	std::vector<Game_Item*> items;
 
 	Game_Actor* actor = nullptr;
 };

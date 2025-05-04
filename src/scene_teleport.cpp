@@ -29,10 +29,10 @@ Scene_Teleport::Scene_Teleport(Game_Actor& actor, const lcf::rpg::Skill& skill)
 	type = Scene::Teleport;
 }
 
-Scene_Teleport::Scene_Teleport(const lcf::rpg::Item& item, const lcf::rpg::Skill& skill)
-		: skill(&skill), item(&item) {
+Scene_Teleport::Scene_Teleport(Game_Item* itemU, const lcf::rpg::Skill& skill)
+	: skill(&skill), itemU(itemU) {
 	type = Scene::Teleport;
-	assert(item.skill_id == skill.ID && "Item doesn't invoke the skill");
+	assert(itemU->GetItemSave()->skill_id == skill.ID && "Item doesn't invoke the skill");
 }
 
 void Scene_Teleport::Start() {
@@ -45,10 +45,11 @@ void Scene_Teleport::vUpdate() {
 	teleport_window->Update();
 
 	if (Input::IsTriggered(Input::DECISION)) {
-		if (item) {
-			Main_Data::game_party->ConsumeItemUse(item->ID);
-		} else {
+		if (itemU == NULL) {
 			Main_Data::game_party->UseSkill(skill->ID, actor, actor);
+		}
+		else {
+			Main_Data::game_party->ConsumeItemUse(itemU);
 		}
 
 		Main_Data::game_system->SePlay(skill->sound_effect);

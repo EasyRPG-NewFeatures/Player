@@ -45,8 +45,11 @@ public:
 	 */
 	void SetItemId(int item_id);
 
+	void SetItem(Game_Item* item_id);
+
 protected:
 	int item_id;
+	Game_Item* item = nullptr;
 };
 
 #endif

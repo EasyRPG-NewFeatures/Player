@@ -266,6 +266,7 @@ inline bool SkillTargetsOne(const lcf::rpg::Skill& skill) {
  * @return the number of attacks.
  */
 int GetNumberOfAttacks(int actor_id, const lcf::rpg::Item& weapon);
+int GetNumberOfAttacks(int actor_id, const lcf::rpg::SaveUniqueItems& weapon);
 
 } // namespace Algo
 

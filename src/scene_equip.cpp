@@ -91,8 +91,11 @@ void Scene_Equip::UpdateStatusWindow() {
 	if (equip_window->GetActive()) {
 		equipstatus_window->ClearParameters();
 	} else if (item_window->GetActive()) {
-		const lcf::rpg::Item* current_item = item_window->GetItem();
-
+		//const lcf::rpg::Item* current_item = item_window->GetItem();
+		const lcf::rpg::SaveUniqueItems* current_item = nullptr;
+		if (item_window->GetItemU()) {
+			current_item = item_window->GetItemU()->GetItemSave();
+		}
 		const auto eidx = equip_window->GetIndex();
 
 		auto atk = actor.GetBaseAtk(Game_Battler::WeaponAll, true, false);
@@ -100,7 +103,7 @@ void Scene_Equip::UpdateStatusWindow() {
 		auto spi = actor.GetBaseSpi(Game_Battler::WeaponAll, true, false);
 		auto agi = actor.GetBaseAgi(Game_Battler::WeaponAll, true, false);
 
-		auto add_item = [&](const lcf::rpg::Item* item, int mod = 1) {
+		auto add_item = [&](const lcf::rpg::SaveUniqueItems* item, int mod = 1) {
 			if (item) {
 				atk += item->atk_points1 * mod;
 				def += item->def_points1 * mod;
@@ -110,17 +113,17 @@ void Scene_Equip::UpdateStatusWindow() {
 		};
 
 		for (int i = 1; i <= 5; i++) {
-			auto* count_item = actor.GetEquipment(i);
+			auto* count_item = actor.GetEquipmentU(i);
 			add_item(count_item, 1);
 		}
 
-		auto* old_item = actor.GetEquipment(eidx + 1);
+		const auto* old_item = actor.GetEquipmentU(eidx + 1);
 		// If its a weapon or shield, get the other hand
-		const lcf::rpg::Item* other_old_item = nullptr;
+		const lcf::rpg::SaveUniqueItems* other_old_item = nullptr;
 		if (eidx == 0) {
-			other_old_item = actor.GetEquipment(eidx + 2);
+			other_old_item = actor.GetEquipmentU(eidx + 2);
 		} else if (eidx == 1) {
-			other_old_item = actor.GetEquipment(eidx);
+			other_old_item = actor.GetEquipmentU(eidx);
 		}
 
 		add_item(old_item, -1);
@@ -155,7 +158,7 @@ static bool CanRemoveEquipment(const Game_Actor& actor, int index) {
 	if (actor.IsEquipmentFixed(true)) {
 		return false;
 	}
-	auto* item = actor.GetEquipment(index + 1);
+	auto* item = actor.GetEquipmentU(index + 1);
 	if (item && item->cursed) {
 		return false;
 	}
@@ -198,11 +201,14 @@ void Scene_Equip::UpdateItemSelection() {
 	} else if (Input::IsTriggered(Input::DECISION)) {
 		Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Decision));
 
-		const lcf::rpg::Item* current_item = item_window->GetItem();
-		int current_item_id = current_item ? current_item->ID : 0;
+		auto* current_item = item_window->GetItemU();
+		//int current_item_id = current_item ? current_item->GetItemSave()->ID : 0;
 
+		lcf::rpg::SaveUniqueItems* item2 = new lcf::rpg::SaveUniqueItems;
+		if (current_item)
+			item2 = current_item->GetItemSave();
 		actor.ChangeEquipment(
-			equip_window->GetIndex() + 1, current_item_id);
+			equip_window->GetIndex() + 1, item2);
 
 		equip_window->SetActive(true);
 		item_window->SetActive(false);

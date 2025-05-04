@@ -290,6 +290,9 @@ protected:
 	bool CommandManiacControlStrings(lcf::rpg::EventCommand const& com);
 	bool CommandManiacCallCommand(lcf::rpg::EventCommand const& com);
 
+	bool CommandAddUniqueItem(lcf::rpg::EventCommand const& com);
+	bool CommandGetWindowItem(lcf::rpg::EventCommand const& com);
+
 	int DecodeInt(lcf::DBArray<int32_t>::const_iterator& it);
 	const std::string DecodeString(lcf::DBArray<int32_t>::const_iterator& it);
 	lcf::rpg::MoveCommand DecodeMove(lcf::DBArray<int32_t>::const_iterator& it);
@@ -340,6 +343,24 @@ protected:
 	lcf::rpg::SaveEventExecState _state;
 	KeyInputState _keyinput;
 	AsyncOp _async_op = {};
+
+	bool is_number(const std::string& s);
+	double evaluateExpression(const std::string& expression);
+	double applyOp(double a, double b, std::string op);
+	int precedence(std::string op);
+	bool isOperator(std::string c);
+	void tokenize(std::string const& str, const char delim, std::vector<std::string>& out);
+	std::string parseExpression(const std::string& expression, Game_Item* item);
+
+	std::string trim(const std::string& str);
+	std::string to_lower(const std::string& str);
+	bool equals_trimmed_ignore_case(const std::string& a, const std::string& b);
+
+
+	struct Vec2 {
+		int x = 0;
+		std::string s = "";
+	};
 };
 
 inline const lcf::rpg::SaveEventExecFrame* Game_Interpreter::GetFramePtr() const {

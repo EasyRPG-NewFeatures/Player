@@ -43,6 +43,15 @@ void Game_Party::SetupNewGame() {
 	RemoveInvalidData();
 }
 
+void Game_Party::SetupFromSaveUniqueItem(std::vector<lcf::rpg::SaveUniqueItems> save) {
+	items.clear();
+
+	for (auto i : save) {
+		Game_Item* item = new Game_Item(std::move(&i));
+		items.push_back(item);
+	}
+}
+
 void Game_Party::SetupFromSave(lcf::rpg::SaveInventory save) {
 	data = std::move(save);
 	RemoveInvalidData();
@@ -139,8 +148,34 @@ void Game_Party::GetItems(std::vector<int>& item_list) {
 }
 
 int Game_Party::GetItemCount(int item_id) const {
-	auto ip = GetItemIndex(item_id);
-	return ip.second ? data.item_counts[ip.first] : 0;
+	/*auto ip = GetItemIndex(item_id);
+	return ip.second ? data.item_counts[ip.first] : 0;*/
+
+	int n = 0;
+	for (auto i : items) {
+		if (i->GetItemSave()->ID == item_id)
+			n += i->GetItemSave()->quantity;
+	}
+
+	return n;
+}
+
+int Game_Party::GetItemCount(Game_Item* item) const {
+	int n = 0;
+	n = item->GetItemSave()->quantity;
+	return n;
+}
+
+int Game_Party::GetEquippedItemCount(Game_Item* item) const {
+	int number = 0;
+	if (item->GetItemSave()->ID >= 0) {
+		for (int i = 0; i < (int)data.party.size(); i++) {
+			Game_Actor* actor = Main_Data::game_actors->GetActor(data.party[i]);
+			number += actor->GetItemCount(item);
+		}
+	}
+
+	return number;
 }
 
 int Game_Party::GetEquippedItemCount(int item_id) const {
@@ -177,50 +212,96 @@ void Game_Party::LoseGold(int n) {
 	data.gold = std::min<int32_t>(std::max<int32_t>(data.gold, 0), 999999);
 }
 
+void Game_Party::AddItem(Game_Item* item, int amount) {
+	int item_id = item->GetItemSave()->ID;
+	if (item_id < 1 || item_id >(int) lcf::Data::items.size()) {
+		Output::Debug("Can't add item to party. {} is not a valid item ID.", item_id);
+		return;
+	}
+
+	if (item->IsUnique()) {
+		if (amount > 1) {
+			amount = 1;
+		}
+		else if (amount < -1) {
+			amount = -1;
+		}
+	}
+
+	bool remove_item = true;
+	if (amount > 1)
+		remove_item = false;
+
+	Game_Item* item_n = nullptr;
+	for (auto i2 : items) {
+		if (*i2 == *item) {
+			item_n = i2;
+			if (!remove_item)
+				break;
+		}
+	}
+
+
+	if (item_n) {
+		int max = GetMaxItemCount(item_id);
+		auto i = item_n->GetItemSave();
+		i->quantity += amount;
+		if (i->quantity > max) {
+			amount = i->quantity - max;
+			i->quantity = max;
+		}
+		else
+			amount = 0;
+		if (i->quantity <= 0) {
+			items.erase(std::remove(items.begin(), items.end(), item_n), items.end());
+		}
+	}
+
+	if (amount > 0) {
+		item->NextUID(true);
+
+		auto i = item->GetItemSave();
+		i->quantity = amount;
+
+		items.push_back(item);
+	}
+}
+
+void Game_Party::AddItem(lcf::rpg::SaveUniqueItems* new_item, int amount) {
+	int item_id = new_item->ID;
+	if (item_id < 1 || item_id >(int) lcf::Data::items.size()) {
+		Output::Debug("Can't add item to party. {} is not a valid item ID.", item_id);
+		return;
+	}
+
+	Game_Item* item = new Game_Item(new_item);
+	AddItem(item, amount);
+}
+
 void Game_Party::AddItem(int item_id, int amount) {
 	if (item_id < 1 || item_id > (int) lcf::Data::items.size()) {
 		Output::Debug("Can't add item to party. {} is not a valid item ID.", item_id);
 		return;
 	}
 
-	int item_limit = GetMaxItemCount(item_id);
-
-	auto ip = GetItemIndex(item_id);
-	auto idx = ip.first;
-	auto has = ip.second;
-	if (!has) {
-		if (amount > 0) {
-			amount = std::min(amount, item_limit);
-			data.item_ids.insert(data.item_ids.begin() + idx, (int16_t)item_id);
-			data.item_counts.insert(data.item_counts.begin() + idx, (uint8_t)amount);
-			data.item_usage.insert(data.item_usage.begin() + idx, 0);
-		}
-		return;
-	}
-
-	int total_items = data.item_counts[idx] + amount;
-
-	if (total_items <= 0) {
-		data.item_ids.erase(data.item_ids.begin() + idx);
-		data.item_counts.erase(data.item_counts.begin() + idx);
-		data.item_usage.erase(data.item_usage.begin() + idx);
-		return;
-	}
-
-	data.item_counts[idx] = (uint8_t)std::min(total_items, item_limit);
-	// If the item was removed, the number of uses resets.
-	// (Adding an item never changes the number of uses, even when
-	// you already have x99 of them.)
-	if (amount < 0) {
-		data.item_usage[idx] = 0;
-	}
+	Game_Item* item = new Game_Item(item_id);
+	AddItem(item->GetItemSave(), amount);
 }
 
 void Game_Party::RemoveItem(int item_id, int amount) {
 	AddItem(item_id, -amount);
 }
+void Game_Party::RemoveItem(lcf::rpg::SaveUniqueItems* new_item, int amount) {
+	AddItem(new_item, -amount);
+}
 
 void Game_Party::ConsumeItemUse(int item_id) {
+
+	Game_Item* i = new Game_Item(item_id);
+	ConsumeItemUse(i);
+
+	return;
+
 	const lcf::rpg::Item* item = lcf::ReaderUtil::GetElement(lcf::Data::items, item_id);
 
 	if (!item) {
@@ -372,6 +453,168 @@ bool Game_Party::UseItem(int item_id, Game_Actor* target) {
 
 	if (was_used) {
 		ConsumeItemUse(item_id);
+	}
+
+	return was_used;
+}
+
+
+
+void Game_Party::ConsumeItemUse(Game_Item* item) {
+
+	const lcf::rpg::Item* i = lcf::ReaderUtil::GetElement(lcf::Data::items, item->GetItemSave()->ID);
+
+	if (item == NULL) {
+		Output::Warning("ConsumeItemUse: Invalid item ID {}.", item->GetItemSave()->ID);
+		return;
+	}
+
+	switch (item->GetItemSave()->type) {
+	case lcf::rpg::Item::Type_normal:
+	case lcf::rpg::Item::Type_weapon:
+	case lcf::rpg::Item::Type_shield:
+	case lcf::rpg::Item::Type_armor:
+	case lcf::rpg::Item::Type_helmet:
+	case lcf::rpg::Item::Type_accessory:
+		return;
+	}
+
+	if (i->uses == 0) {
+		// Unlimited uses
+		return;
+	}
+
+	for (auto item2 : Main_Data::game_party->items) {
+
+		if (item2->SameItem(item)) {
+
+			auto is = item->GetItemSave();
+			is->uses++;
+
+			if (is->uses >= i->uses) {
+
+				is->quantity--;
+				is->uses = 0;
+
+				if (is->quantity <= 0) {
+					// Last One => We need to remove them
+					items.erase(std::remove(items.begin(), items.end(), item2), items.end());
+				}
+				
+			}
+
+			return;
+		}
+	}
+
+	return;
+}
+
+bool Game_Party::IsItemUsable(Game_Item* item, const Game_Actor* target) const {
+	if (item == NULL) {
+		Output::Warning("IsItemUsable: Invalid item");
+		return false;
+	}
+	if (target && !target->IsItemUsable(item->GetItemSave()->ID)) {
+		return false;
+	}
+
+	const auto* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->GetItemSave()->skill_id);
+	const bool in_battle = Game_Battle::IsBattleRunning();
+
+	if (item->GetItemSave()->use_skill) {
+		// RPG_RT BUG: Does not check if skill is usable.
+		return skill &&
+			(in_battle
+				|| skill->scope == lcf::rpg::Skill::Scope_self
+				|| skill->scope == lcf::rpg::Skill::Scope_ally
+				|| skill->scope == lcf::rpg::Skill::Scope_party);
+	}
+
+	switch (item->GetItemSave()->type) {
+	case lcf::rpg::Item::Type_medicine:
+		return !in_battle || !item->GetItemSave()->occasion_field1;
+	case lcf::rpg::Item::Type_material:
+	case lcf::rpg::Item::Type_book:
+		return !in_battle;
+	case lcf::rpg::Item::Type_switch:
+		return in_battle ? item->GetItemSave()->occasion_battle : item->GetItemSave()->occasion_field2;
+	case lcf::rpg::Item::Type_special:
+		if (skill && Algo::IsSkillUsable(*skill, false)) {
+			// RPG_RT requires one actor in the party and alive who can use the item->
+			// But only if the item invokes a normal or subskill. This check is
+			// not performed for escape, teleport, or switch skills!
+			if (!Algo::IsNormalOrSubskill(*skill)) {
+				return true;
+			}
+			else {
+				for (auto* actor : GetActors()) {
+					if (actor->CanAct() && actor->IsItemUsable(item->GetItemSave()->ID)) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	default:
+		break;
+	}
+
+	return false;
+}
+
+bool Game_Party::UseItem(Game_Item* item, Game_Actor* target) {
+	bool was_used = false;
+
+	if (item == NULL) {
+		Output::Warning("UseItem: Can't use invalid item");
+		return false;
+	}
+
+	bool do_skill = (item->GetItemSave()->type == lcf::rpg::Item::Type_special)
+		|| (item->GetItemSave()->use_skill && (
+			item->GetItemSave()->type == lcf::rpg::Item::Type_weapon
+			|| item->GetItemSave()->type == lcf::rpg::Item::Type_shield
+			|| item->GetItemSave()->type == lcf::rpg::Item::Type_armor
+			|| item->GetItemSave()->type == lcf::rpg::Item::Type_helmet
+			|| item->GetItemSave()->type == lcf::rpg::Item::Type_accessory
+			)
+			);
+
+	const lcf::rpg::Skill* skill = nullptr;
+	if (do_skill) {
+		skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->GetItemSave()->skill_id);
+		if (skill == nullptr) {
+			Output::Warning("UseItem: Can't use item {} skill with invalid ID {}", item->GetItemSave()->ID, item->GetItemSave()->skill_id);
+			return false;
+		}
+	}
+
+	const Game_Actor* fixed_source = nullptr;
+	if (skill && skill->scope != lcf::rpg::Skill::Scope_self) {
+		fixed_source = GetHighestLeveledActorWhoCanUse(item);
+		if (fixed_source == nullptr) {
+			return false;
+		}
+	}
+
+	if (target) {
+		const auto* source = fixed_source ? fixed_source : target;
+		if (IsItemUsable(item, source)) {
+			was_used = target->UseItem(item, source);
+		}
+	}
+	else {
+		for (auto* actor : GetActors()) {
+			const auto* source = fixed_source ? fixed_source : actor;
+			if (IsItemUsable(item, source)) {
+				was_used |= actor->UseItem(item, source);
+			}
+		}
+	}
+
+	if (was_used) {
+		ConsumeItemUse(item);
 	}
 
 	return was_used;
@@ -783,6 +1026,19 @@ Game_Actor* Game_Party::GetHighestLeveledActorWhoCanUse(const lcf::rpg::Item* it
 		if (actor->CanAct()
 				&& actor->IsItemUsable(item->ID)
 				&& (best == nullptr || best->GetLevel() < actor->GetLevel())) {
+			best = actor;
+		}
+	}
+	return best;
+}
+
+Game_Actor* Game_Party::GetHighestLeveledActorWhoCanUse(Game_Item* item) const {
+	Game_Actor* best = nullptr;
+
+	for (auto* actor : GetActors()) {
+		if (actor->CanAct()
+			&& actor->IsItemUsable(item->GetItemSave()->ID)
+			&& (best == nullptr || best->GetLevel() < actor->GetLevel())) {
 			best = actor;
 		}
 	}

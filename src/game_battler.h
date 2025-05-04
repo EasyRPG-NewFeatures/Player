@@ -34,6 +34,7 @@
 #include "string_view.h"
 #include "sprite_battler.h"
 #include "sprite_weapon.h"
+#include "game_item.h"
 
 class Game_Party_Base;
 class Sprite_Battler;
@@ -473,6 +474,8 @@ public:
 	 * @return true if item affected anything
 	 */
 	virtual bool UseItem(int item_id, const Game_Battler* source);
+
+	virtual bool UseItem(Game_Item* item, const Game_Battler* source);
 
 	/**
 	 * Applies the effects of a skill.

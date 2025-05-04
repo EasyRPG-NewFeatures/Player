@@ -68,6 +68,10 @@
 #include "baseui.h"
 #include "algo.h"
 #include "rand.h"
+#include <game_item.h>
+#include <stack>
+#include <cmath>
+#include <window_equipitem.h>
 
 enum BranchSubcommand {
 	eOptionBranchElse = 1
@@ -826,6 +830,10 @@ bool Game_Interpreter::ExecuteCommand(lcf::rpg::EventCommand const& com) {
 			return CommandManiacControlStrings(com);
 		case Cmd::Maniac_CallCommand:
 			return CommandManiacCallCommand(com);
+		case 9904:
+			return CommandAddUniqueItem(com);
+		case 9905:
+			return CommandGetWindowItem(com);
 		default:
 			return true;
 	}
@@ -5160,4 +5168,893 @@ int Game_Interpreter::ManiacBitmask(int value, int mask) const {
 	}
 
 	return value;
+}
+
+bool Game_Interpreter::CommandGetWindowItem(lcf::rpg::EventCommand const& com) {
+
+
+	int type = com.parameters[0];
+
+	if (type == 0) {
+
+		int picture_id = ValueOrVariable(com.parameters[1], com.parameters[2]);
+		int actor_id = ValueOrVariable(com.parameters[3], com.parameters[4]);
+		int item_type = ValueOrVariable(com.parameters[5], com.parameters[6]);
+		int column_max = 0;
+		if (com.parameters.size() > 8)
+			column_max = ValueOrVariable(com.parameters[7], com.parameters[8]);
+
+		int x = 0;
+		int y = 0;
+		int w = Main_Data::game_windows->GetWindow(picture_id).window->GetWidth();
+		int h = Main_Data::game_windows->GetWindow(picture_id).window->GetHeight();
+
+		Window_EquipItem* window = new Window_EquipItem(x, y, w, h, actor_id, item_type);
+		if (column_max > 0)
+			window->SetColumnMax(column_max);
+		window->Refresh();
+		window->SetIndex(0);
+		window->SetVisible(false);
+
+		Main_Data::game_windows->GetWindow(picture_id).Reset(window);
+
+
+	} else if (type == 1) {
+
+		int picture_id = ValueOrVariable(com.parameters[1], com.parameters[2]);
+		Main_Data::game_windows->GetWindow(picture_id).window->SetActive(true);
+		Main_Data::game_windows->GetWindow(picture_id).window->Update();
+
+		if (com.parameters.size() > 4) {
+
+			int string_id = ValueOrVariable(com.parameters[3], com.parameters[4]);
+
+			Window_EquipItem* win_equip = (Window_EquipItem*)Main_Data::game_windows->GetWindow(picture_id).window.get();
+			auto* item = win_equip->GetItemU();
+
+			std::string msg = "";
+			if (item) {
+				msg += item->ToString();
+			}
+			Game_Strings::Str_Params str_params = {
+				string_id,
+				true,
+				true,
+			};
+			Main_Data::game_strings->Asg(str_params, msg);
+
+		}
+
+	}
+	else if (type == 3) {
+
+		int picture_id = ValueOrVariable(com.parameters[1], com.parameters[2]);
+		Window_EquipItem* win_equip = (Window_EquipItem*) Main_Data::game_windows->GetWindow(picture_id).window.get();
+		auto* item = win_equip->GetItemU();
+
+		if (item) {
+			std::string text = com.string.data();
+			std::istringstream stream(text);
+			std::string line;
+			while (std::getline(stream, line)) {
+
+				if (!line._Equal("")) {
+					char delim = '=';
+
+					std::vector<std::string> res;
+					tokenize(line, delim, res);
+
+					std::string attribute = res[0];
+					std::string op = "=";
+					char c = attribute.back();
+					if (c == '+' || c == '-') {
+						op = c + op;
+						attribute.pop_back();
+					}
+					c = attribute.back();
+					while (c && c == ' ') {
+						attribute.pop_back();
+						c = attribute.back();
+					}
+					std::string expr = "";
+
+					for (int i = 1; i < res.size(); i++) {
+						expr += res[i];
+					}
+
+
+					std::transform(attribute.begin(),
+						attribute.end(),
+						attribute.begin(),
+						::tolower);
+
+					std::string expr2 = parseExpression(expr, item);
+					bool boolean_true = Game_Interpreter::equals_trimmed_ignore_case(expr2, "true");
+
+					if (attribute == "name") {
+						item->SetName(op, expr2);
+					}
+					else if (attribute == "description") {
+						item->SetDescription(op, expr2);
+					}
+					else if (attribute == "easyrpg_using_message") {
+						item->SetEasyrpgUsingMessage(op, expr2);
+					}
+					else if (attribute == "type") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetType(op, (int)(expr_value));
+					}
+					else if (attribute == "price") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetPrice(op, (int)(expr_value));
+					}
+					else if (attribute == "uses") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetUses(op, (int)(expr_value));
+					}
+					else if (attribute == "atk_points1") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetAtk_points1(op, (int)(expr_value));
+					}
+					else if (attribute == "def_points1") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetDef_points1(op, (int)(expr_value));
+					}
+					else if (attribute == "spi_points1") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetSpi_points1(op, (int)(expr_value));
+					}
+					else if (attribute == "agi_points1") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetAgi_points1(op, (int)(expr_value));
+					}
+					else if (attribute == "sp_cost") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetSp_cost(op, (int)(expr_value));
+					}
+					else if (attribute == "hit") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetHit(op, (int)(expr_value));
+					}
+					else if (attribute == "critical_hit") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetCritical_hit(op, (int)(expr_value));
+					}
+					else if (attribute == "animation_id") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetAnimation_id(op, (int)(expr_value));
+					}
+					else if (attribute == "recover_hp_rate") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetRecover_hp_rate(op, (int)(expr_value));
+					}
+					else if (attribute == "recover_hp") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetRecover_hp(op, (int)(expr_value));
+					}
+					else if (attribute == "recover_sp_rate") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetRecover_sp_rate(op, (int)(expr_value));
+					}
+					else if (attribute == "recover_sp") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetRecover_sp(op, (int)(expr_value));
+					}
+					else if (attribute == "max_hp_points") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetMax_hp_points(op, (int)(expr_value));
+					}
+					else if (attribute == "max_sp_points") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetMax_sp_points(op, (int)(expr_value));
+					}
+					else if (attribute == "atk_points2") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetAtk_points2(op, (int)(expr_value));
+					}
+					else if (attribute == "def_points2") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetDef_points2(op, (int)(expr_value));
+					}
+					else if (attribute == "spi_points2") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetSpi_points2(op, (int)(expr_value));
+					}
+					else if (attribute == "agi_points2") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetAgi_points2(op, (int)(expr_value));
+					}
+					else if (attribute == "using_message") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetUsing_message(op, (int)(expr_value));
+					}
+					else if (attribute == "skill_id") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetSkill_id(op, (int)(expr_value));
+					}
+					else if (attribute == "switch_id") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetSwitch_id(op, (int)(expr_value));
+					}
+					else if (attribute == "state_chance") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetState_chance(op, (int)(expr_value));
+					}
+					else if (attribute == "weapon_animation") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetWeapon_animation(op, (int)(expr_value));
+					}
+					else if (attribute == "ranged_trajectory") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetRanged_trajectory(op, (int)(expr_value));
+					}
+					else if (attribute == "ranged_target") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetRanged_target(op, (int)(expr_value));
+					}
+					else if (attribute == "easyrpg_max_count") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetEasyrpg_max_count(op, (int)(expr_value));
+					}
+					else if (attribute == "number_of_use") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetNumber_of_use(op, (int)(expr_value));
+					}
+					else if (attribute == "number_of_upgrade") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetNumber_of_upgrade(op, (int)(expr_value));
+					}
+					else if (attribute == "quantity") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetQuantity(op, (int)(expr_value));
+					}
+					else if (attribute == "unique_id") {
+						double expr_value = evaluateExpression(expr2);
+						item->SetUniqueID(op, (int)(expr_value));
+					}
+					else if (attribute == "two_handed") {
+						item->SetTwo_handed(op, boolean_true);
+					}
+					else if (attribute == "preemptive") {
+						item->SetPreemptive(op, boolean_true);
+					}
+					else if (attribute == "dual_attack") {
+						item->SetDual_attack(op, boolean_true);
+					}
+					else if (attribute == "attack_all") {
+						item->SetAttack_all(op, boolean_true);
+					}
+					else if (attribute == "ignore_evasion") {
+						item->SetIgnore_evasion(op, boolean_true);
+					}
+					else if (attribute == "prevent_critical") {
+						item->SetPrevent_critical(op, boolean_true);
+					}
+					else if (attribute == "raise_evasion") {
+						item->SetRaise_evasion(op, boolean_true);
+					}
+					else if (attribute == "half_sp_cost") {
+						item->SetHalf_sp_cost(op, boolean_true);
+					}
+					else if (attribute == "no_terrain_damage") {
+						item->SetNo_terrain_damage(op, boolean_true);
+					}
+					else if (attribute == "cursed") {
+						item->SetCursed(op, boolean_true);
+					}
+					else if (attribute == "entire_party") {
+						item->SetEntire_party(op, boolean_true);
+					}
+					else if (attribute == "occasion_field1") {
+						item->SetOccasion_field1(op, boolean_true);
+					}
+					else if (attribute == "ko_only") {
+						item->SetKo_only(op, boolean_true);
+					}
+					else if (attribute == "occasion_field2") {
+						item->SetOccasion_field2(op, boolean_true);
+					}
+					else if (attribute == "occasion_battle") {
+						item->SetOccasion_battle(op, boolean_true);
+					}
+					else if (attribute == "reverse_state_effect") {
+						item->SetReverse_state_effect(op, boolean_true);
+					}
+					else if (attribute == "use_skill") {
+						item->SetUse_skill(op, boolean_true);
+					}
+					else if (attribute == "use_skill") {
+						item->SetForce_Unique(op, boolean_true);
+					}
+					else {
+						Output::Warning("Unknow, attributes : {}", attribute);
+					}
+
+				}
+			}
+
+			win_equip->Refresh();
+		}
+
+	}
+
+	return true;
+}
+
+bool Game_Interpreter::CommandAddUniqueItem(lcf::rpg::EventCommand const& com) {
+
+	int item_id = ValueOrVariable(com.parameters[0], com.parameters[1]);
+
+	Game_Item* item = new Game_Item(item_id);
+	item->GetItemSave()->force_unique = true;
+
+	std::string text = com.string.data();
+	std::istringstream stream(text);
+	std::string line;
+
+	while (std::getline(stream, line)) {
+
+		if (!line._Equal("")) {
+			char delim = '=';
+
+			std::vector<std::string> res;
+			tokenize(line, delim, res);
+
+			std::string attribute = res[0];
+			std::string op = "=";
+			char c = attribute.back();
+			if (c == '+' || c == '-') {
+				op = c + op;
+				attribute.pop_back();
+			}
+			c = attribute.back();
+			while (c && c == ' ') {
+				attribute.pop_back();
+				c = attribute.back();
+			}
+			std::string expr = "";
+
+			for (int i = 1; i < res.size(); i++) {
+				expr += res[i];
+			}
+
+			
+			std::transform(attribute.begin(),
+				attribute.end(),
+				attribute.begin(),
+				::tolower);
+
+			std::string expr2 = parseExpression(expr, item);
+			bool boolean_true = Game_Interpreter::equals_trimmed_ignore_case(expr2, "true");
+
+			if (attribute == "name") {
+				item->SetName(op, expr2);
+			}
+			else if (attribute == "description") {
+				item->SetDescription(op, expr2);
+			}
+			else if (attribute == "easyrpg_using_message") {
+				item->SetEasyrpgUsingMessage(op, expr2);
+			}
+			else if (attribute == "type") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetType(op, (int)(expr_value));
+			}
+			else if (attribute == "price") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetPrice(op, (int)(expr_value));
+			}
+			else if (attribute == "uses") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetUses(op, (int)(expr_value));
+			}
+			else if (attribute == "atk_points1") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetAtk_points1(op, (int)(expr_value));
+			}
+			else if (attribute == "def_points1") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetDef_points1(op, (int)(expr_value));
+			}
+			else if (attribute == "spi_points1") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetSpi_points1(op, (int)(expr_value));
+			}
+			else if (attribute == "agi_points1") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetAgi_points1(op, (int)(expr_value));
+			}
+			else if (attribute == "sp_cost") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetSp_cost(op, (int)(expr_value));
+			}
+			else if (attribute == "hit") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetHit(op, (int)(expr_value));
+			}
+			else if (attribute == "critical_hit") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetCritical_hit(op, (int)(expr_value));
+			}
+			else if (attribute == "animation_id") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetAnimation_id(op, (int)(expr_value));
+			}
+			else if (attribute == "recover_hp_rate") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetRecover_hp_rate(op, (int)(expr_value));
+			}
+			else if (attribute == "recover_hp") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetRecover_hp(op, (int)(expr_value));
+			}
+			else if (attribute == "recover_sp_rate") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetRecover_sp_rate(op, (int)(expr_value));
+			}
+			else if (attribute == "recover_sp") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetRecover_sp(op, (int)(expr_value));
+			}
+			else if (attribute == "max_hp_points") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetMax_hp_points(op, (int)(expr_value));
+			}
+			else if (attribute == "max_sp_points") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetMax_sp_points(op, (int)(expr_value));
+			}
+			else if (attribute == "atk_points2") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetAtk_points2(op, (int)(expr_value));
+			}
+			else if (attribute == "def_points2") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetDef_points2(op, (int)(expr_value));
+			}
+			else if (attribute == "spi_points2") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetSpi_points2(op, (int)(expr_value));
+			}
+			else if (attribute == "agi_points2") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetAgi_points2(op, (int)(expr_value));
+			}
+			else if (attribute == "using_message") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetUsing_message(op, (int)(expr_value));
+			}
+			else if (attribute == "skill_id") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetSkill_id(op, (int)(expr_value));
+			}
+			else if (attribute == "switch_id") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetSwitch_id(op, (int)(expr_value));
+			}
+			else if (attribute == "state_chance") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetState_chance(op, (int)(expr_value));
+			}
+			else if (attribute == "weapon_animation") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetWeapon_animation(op, (int)(expr_value));
+			}
+			else if (attribute == "ranged_trajectory") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetRanged_trajectory(op, (int)(expr_value));
+			}
+			else if (attribute == "ranged_target") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetRanged_target(op, (int)(expr_value));
+			}
+			else if (attribute == "easyrpg_max_count") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetEasyrpg_max_count(op, (int)(expr_value));
+			}
+			else if (attribute == "number_of_use") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetNumber_of_use(op, (int)(expr_value));
+			}
+			else if (attribute == "number_of_upgrade") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetNumber_of_upgrade(op, (int)(expr_value));
+				}
+			else if (attribute == "quantity") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetQuantity(op, (int)(expr_value));
+			}
+			else if (attribute == "unique_id") {
+				double expr_value = evaluateExpression(expr2);
+				item->SetUniqueID(op, (int)(expr_value));
+			}
+			else if (attribute == "two_handed") {
+				item->SetTwo_handed(op,boolean_true);
+			}
+			else if (attribute == "preemptive") {
+				item->SetPreemptive(op,boolean_true);
+			}
+			else if (attribute == "dual_attack") {
+				item->SetDual_attack(op,boolean_true);
+			}
+			else if (attribute == "attack_all") {
+				item->SetAttack_all(op,boolean_true);
+			}
+			else if (attribute == "ignore_evasion") {
+				item->SetIgnore_evasion(op,boolean_true);
+			}
+			else if (attribute == "prevent_critical") {
+				item->SetPrevent_critical(op,boolean_true);
+			}
+			else if (attribute == "raise_evasion") {
+				item->SetRaise_evasion(op,boolean_true);
+			}
+			else if (attribute == "half_sp_cost") {
+				item->SetHalf_sp_cost(op,boolean_true);
+			}
+			else if (attribute == "no_terrain_damage") {
+				item->SetNo_terrain_damage(op,boolean_true);
+			}
+			else if (attribute == "cursed") {
+				item->SetCursed(op,boolean_true);
+			}
+			else if (attribute == "entire_party") {
+				item->SetEntire_party(op,boolean_true);
+			}
+			else if (attribute == "occasion_field1") {
+				item->SetOccasion_field1(op,boolean_true);
+			}
+			else if (attribute == "ko_only") {
+				item->SetKo_only(op,boolean_true);
+			}
+			else if (attribute == "occasion_field2") {
+				item->SetOccasion_field2(op,boolean_true);
+			}
+			else if (attribute == "occasion_battle") {
+				item->SetOccasion_battle(op,boolean_true);
+			}
+			else if (attribute == "reverse_state_effect") {
+				item->SetReverse_state_effect(op,boolean_true);
+			}
+			else if (attribute == "use_skill") {
+				item->SetUse_skill(op,boolean_true);
+				}
+			else if (attribute == "use_skill") {
+				item->SetForce_Unique(op,boolean_true);
+			}
+			else {
+				Output::Warning("Unknow, attributes : {}", attribute);
+			}
+
+		}
+	}
+
+	item->uniqueID = item->GetItemSave()->uniqueID;
+
+	Main_Data::game_party->AddItem(item, 1);
+
+	return true;
+}
+
+// Function to check if a character is an operator
+bool Game_Interpreter::isOperator(std::string c)
+{
+	// Returns true if the character is an operator
+	return c == "+" || c == "-" || c == "*" || c == "/"
+		|| c == "^" || c == "min" || c == "max" || c == "?"
+		|| c == "<" || c == ">" || c == "=" || c == "!"
+		|| c == "<=" || c == ">=";
+}
+
+// Function to get the precedence of an operator
+int Game_Interpreter::precedence(std::string op)
+{
+	// Returns the precedence of the operator
+	if (op == "+" || op == "-")
+		return 1;
+	if (op == "*" || op == "/")
+		return 2;
+	if (op == "^" || op == "min" || op == "max" || op == "?" || op == "<" || op == ">" || op == "="
+		|| op == "!" || op == "<=" || op == ">=")
+		return 3;
+	return 0;
+}
+
+// Function to apply an operator to two operands
+double Game_Interpreter::applyOp(double a, double b, std::string op)
+{
+
+	int value = 0;
+	int rmax = std::max(a, b);
+	int rmin = std::min(a, b);
+
+	// Applies the operator to the operands and returns the
+	// result
+	if (op == "+")
+		return a + b;
+	if (op == "-")
+		return a - b;
+	if (op == "*")
+		return a * b;
+	if (op == "/")
+		return a / b;
+	if (op == "^")
+		return pow(a, b);
+	if (op == "min")
+		return min(a, b);
+	if (op == "max")
+		return max(a, b);
+	if (op == "?") {
+		value = Rand::GetRandomNumber(rmin, rmax);
+		// Output::Debug("R {} {} {}", rmin, rmax, value);
+		return value;
+	}
+	if (op == "<")
+		if (a < b)
+			return 1;
+		else
+			return 0;
+	if (op == ">")
+		if (a > b)
+			return 1;
+		else
+			return 0;
+	if (op == "=")
+		if (a == b)
+			return 1;
+		else
+			return 0;
+	if (op == "<=")
+		if (a <= b)
+			return 1;
+		else
+			return 0;
+	if (op == ">=")
+		if (a >= b)
+			return 1;
+		else
+			return 0;
+	if (op == "!")
+		if (a != b)
+			return 1;
+		else
+			return 0;
+
+	return 0;
+}
+
+bool Game_Interpreter::is_number(const std::string& s)
+{
+	std::string::const_iterator it = s.begin();
+	while (it != s.end() && std::isdigit(*it)) ++it;
+	return !s.empty() && it == s.end();
+}
+
+std::string Game_Interpreter::parseExpression(const std::string& expression, Game_Item* item) {
+
+	std::string token;
+
+	std::string chaine = expression;
+	//std::transform(chaine.begin(), chaine.end(), chaine.begin(),
+	//	[](unsigned char c) { return std::tolower(c); });
+
+	std::sregex_iterator end;
+	std::string sub_string = chaine;
+
+	std::string result;
+
+	std::regex patternVariable(R"(\\[vV]\[(\d*)\])");
+	std::sregex_iterator it(sub_string.begin(), sub_string.end(), patternVariable);
+
+	std::size_t last_pos = 0;
+
+	while (it != end) {
+		std::smatch match = *it;
+		std::string group1 = match[1];
+
+		result += sub_string.substr(last_pos, it->position() - last_pos);
+
+		int v = stoi(group1);
+		auto r = Main_Data::game_variables->Get(v);
+		result += std::to_string(r);
+
+		last_pos = it->position() + it->length();
+		++it;
+	}
+	if (result != "") {
+		result += sub_string.substr(last_pos);
+		sub_string = result;
+	}
+
+	result = "";
+
+	std::regex patternText(R"(\\[tT]\[(\d*)\])");
+	std::sregex_iterator it_text(sub_string.begin(), sub_string.end(), patternText);
+
+	last_pos = 0;
+
+	while (it != end) {
+		std::smatch match = *it_text;
+		std::string group1 = match[1];
+
+		result += sub_string.substr(last_pos, it_text->position() - last_pos);
+
+		int v = stoi(group1);
+		auto r = Main_Data::game_strings->Get(v);
+		if (r != "")
+			result += r.data();
+
+		last_pos = it_text->position() + it_text->length();
+		++it_text;
+	}
+	if (result != "") {
+		result += sub_string.substr(last_pos);
+		sub_string = result;
+	}
+
+	sub_string = std::regex_replace(sub_string, std::regex(R"(\\original_name)"), item->GetOriginalName());
+	
+	if (sub_string == "")
+		sub_string = "0";
+
+
+	return sub_string;
+}
+
+// Function to parse and evaluate a mathematical expression
+// Found here : https://www.geeksforgeeks.org/how-to-parse-mathematical-expressions-in-cpp/
+double Game_Interpreter::evaluateExpression(const std::string& expression)
+{
+
+	std::stack<std::string> operators; // Stack to hold operators
+	std::stack<double> operands; // Stack to hold operands
+
+	std::string token;
+	std::string chaine = expression;
+
+	// Output::Debug("{}", chaine);
+
+	std::regex pattern("(\\()?(<=|>=|min|max|[-+*\\/{}<>=!\?])?(-?[0-9]*)(\\))?"); // ("([-+*\\/])?(-?[0-9]+)"); // (\\()?([-+*\\/])?(-?[0-9]+)\\)?
+
+	std::sregex_iterator it(chaine.begin(), chaine.end(), pattern);
+	std::sregex_iterator end;
+
+	std::string op = "";
+
+	bool op_unitaire = true;
+
+	std::vector<Vec2> algo = {};
+	int w = 0;
+	char old_op = ' ';
+	while (it != end)
+	{
+		for (int i = 1; i < it->size(); i++) {
+			token = it->str(i);
+
+			if (token.empty())
+				continue; // Skip empty tokens
+			if (isdigit(token[0])) { // If the token is a number
+				double num;
+				std::stringstream(token)
+					>> num; // Convert the token to a number
+				operands.push(num); // Push the number onto the
+				// operand stack
+				op_unitaire = false;
+			}
+			else if (Game_Interpreter::isOperator(token)) { // If the token is
+				// an operator
+				std::string op = token;
+				if (op == "-" && op_unitaire) {
+					operands.push(0);
+					operators.push(op);
+				}
+				else {
+					// While the operator stack is not empty and the
+					// top operator has equal or higher precedence
+					while (!operators.empty()
+						&& Game_Interpreter::precedence(operators.top())
+						>= Game_Interpreter::precedence(op)) {
+						// Pop two operands and one operator
+						double b = operands.top();
+						operands.pop();
+						double a = operands.top();
+						operands.pop();
+						std::string op = operators.top();
+						operators.pop();
+						// Apply the operator to the operands and
+						// push the result onto the operand stack
+						operands.push(Game_Interpreter::applyOp(a, b, op));
+					}
+					// Push the current operator onto the operator
+					// stack
+					operators.push(op);
+				}
+				op_unitaire = true;
+			}
+			else if (token[0] == '(') { // If the token is an
+				// opening parenthesis
+				// Push it onto the operator stack
+				operators.push("(");
+				op_unitaire = true;
+			}
+			else if (token[0] == ')') { // If the token is a
+				// closing parenthesis
+				// While the operator stack is not empty and the
+				// top operator is not an opening parenthesis
+				while (!operators.empty()
+					&& operators.top() != "(") {
+					// Pop two operands and one operator
+					double b = operands.top();
+					operands.pop();
+					double a = operands.top();
+					operands.pop();
+					std::string op = operators.top();
+					operators.pop();
+					// Apply the operator to the operands and
+					// push the result onto the operand stack
+					operands.push(Game_Interpreter::applyOp(a, b, op));
+				}
+				// Pop the opening parenthesis
+				operators.pop();
+				op_unitaire = false;
+			}
+		}
+
+		it++;
+	}
+
+	// While the operator stack is not empty
+	while (!operators.empty()) {
+		// Pop two operands and one operator
+		double b = operands.top();
+		operands.pop();
+		double a = operands.top();
+		operands.pop();
+		std::string op = operators.top();
+		operators.pop();
+		// Apply the operator to the operands and push the
+		// result onto the operand stack
+		operands.push(Game_Interpreter::applyOp(a, b, op));
+	}
+
+	// The result is at the top of the operand stack
+	return operands.top();
+}
+
+void Game_Interpreter::tokenize(std::string const& str, const char delim,
+	std::vector<std::string>& out)
+{
+	size_t start;
+	size_t end = 0;
+
+	while ((start = str.find_first_not_of(delim, end)) != std::string::npos)
+	{
+		end = str.find(delim, start);
+		out.push_back(str.substr(start, end - start));
+	}
+}
+
+std::string Game_Interpreter::trim(const std::string& str) {
+	auto begin = str.begin();
+	while (begin != str.end() && std::isspace(*begin)) ++begin;
+
+	auto end = str.end();
+	do {
+		--end;
+	} while (std::distance(begin, end) > 0 && std::isspace(*end));
+
+	return std::string(begin, end + 1);
+}
+
+// Convertit en minuscule
+std::string Game_Interpreter::to_lower(const std::string& str) {
+	std::string out = str;
+	std::transform(out.begin(), out.end(), out.begin(),
+		[](unsigned char c) { return std::tolower(c); });
+	return out;
+}
+
+// Comparaison
+bool Game_Interpreter::equals_trimmed_ignore_case(const std::string& a, const std::string& b) {
+	return to_lower(trim(a)) == to_lower(trim(b));
 }

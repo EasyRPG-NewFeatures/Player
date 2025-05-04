@@ -335,7 +335,7 @@ const lcf::rpg::BattlerAnimationItemSkill* Game_BattleAlgorithm::AlgorithmBase::
 	return nullptr;
 }
 
-const lcf::rpg::Item* Game_BattleAlgorithm::AlgorithmBase::GetWeaponData() const {
+const lcf::rpg::SaveUniqueItems* Game_BattleAlgorithm::AlgorithmBase::GetWeaponData() const {
 	return nullptr;
 }
 
@@ -561,7 +561,7 @@ void Game_BattleAlgorithm::Normal::Init(Style style) {
 	weapon_style = -1;
 	if (source->GetType() == Game_Battler::Type_Ally && style == Style_MultiHit) {
 		auto* ally = static_cast<Game_Actor*>(source);
-		if (ally->GetWeapon() && ally->Get2ndWeapon()) {
+		if (ally->GetWeaponU() && ally->Get2ndWeaponU()) {
 			auto hits = hits_multiplier * ally->GetNumberOfAttacks(Game_Battler::WeaponPrimary);
 			weapon_style = hits;
 			hits += hits_multiplier * ally->GetNumberOfAttacks(Game_Battler::WeaponSecondary);
@@ -798,11 +798,12 @@ const lcf::rpg::BattlerAnimationItemSkill* Game_BattleAlgorithm::Normal::GetWeap
 	auto* source = GetSource();
 	if (source->GetType() == Game_Battler::Type_Ally) {
 		auto* ally = static_cast<Game_Actor*>(source);
-		auto weapons = ally->GetWeapons(weapon);
+		auto weapons = ally->GetWeaponsU(weapon);
 		auto* item = weapons[0];
 		if (item) {
-			if (static_cast<int>(item->animation_data.size()) > source->GetId() - 1) {
-				return &item->animation_data[source->GetId() - 1];
+			lcf::rpg::Item* i = lcf::ReaderUtil::GetElement(lcf::Data::items, item->ID);
+			if (static_cast<int>(i->animation_data.size()) > source->GetId() - 1) {
+				return &i->animation_data[source->GetId() - 1];
 			}
 		}
 	}
@@ -810,12 +811,12 @@ const lcf::rpg::BattlerAnimationItemSkill* Game_BattleAlgorithm::Normal::GetWeap
 	return nullptr;
 }
 
-const lcf::rpg::Item* Game_BattleAlgorithm::Normal::GetWeaponData() const {
+const lcf::rpg::SaveUniqueItems* Game_BattleAlgorithm::Normal::GetWeaponData() const {
 	const auto weapon = GetWeapon();
 	auto* source = GetSource();
 	if (source->GetType() == Game_Battler::Type_Ally) {
 		auto* ally = static_cast<Game_Actor*>(source);
-		auto weapons = ally->GetWeapons(weapon);
+		auto weapons = ally->GetWeaponsU(weapon);
 		auto* item = weapons[0];
 		if (item) {
 			return item;
@@ -832,19 +833,19 @@ const lcf::rpg::Sound* Game_BattleAlgorithm::Normal::GetStartSe() const {
 	return nullptr;
 }
 
-Game_BattleAlgorithm::Skill::Skill(Game_Battler* source, Game_Battler* target, const lcf::rpg::Skill& skill, const lcf::rpg::Item* item) :
+Game_BattleAlgorithm::Skill::Skill(Game_Battler* source, Game_Battler* target, const lcf::rpg::Skill& skill, const lcf::rpg::SaveUniqueItems* item) :
 	AlgorithmBase(Type::Skill, source, target), skill(skill), item(item)
 {
 	Init();
 }
 
-Game_BattleAlgorithm::Skill::Skill(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::Skill& skill, const lcf::rpg::Item* item) :
+Game_BattleAlgorithm::Skill::Skill(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::Skill& skill, const lcf::rpg::SaveUniqueItems* item) :
 	AlgorithmBase(Type::Skill, source, target), skill(skill), item(item)
 {
 	Init();
 }
 
-Game_BattleAlgorithm::Skill::Skill(Game_Battler* source, const lcf::rpg::Skill& skill, const lcf::rpg::Item* item) :
+Game_BattleAlgorithm::Skill::Skill(Game_Battler* source, const lcf::rpg::Skill& skill, const lcf::rpg::SaveUniqueItems* item) :
 	Skill(source, source, skill, item)
 {
 }
@@ -1124,10 +1125,12 @@ bool Game_BattleAlgorithm::Skill::vExecute() {
 std::string Game_BattleAlgorithm::Skill::GetStartMessage(int line) const {
 	if (item && item->using_message == 0) {
 		if (line == 0) {
+
+			const auto i = lcf::ReaderUtil::GetElement(lcf::Data::items, item->ID);
 			if (Feature::HasRpg2kBattleSystem()) {
-				return BattleMessage::GetItemStartMessage2k(*GetSource(), *item);
+				return BattleMessage::GetItemStartMessage2k(*GetSource(), *i);
 			} else {
-				return BattleMessage::GetItemStartMessage2k3(*GetSource(), *item);
+				return BattleMessage::GetItemStartMessage2k3(*GetSource(), *i);
 			}
 		}
 		return "";
@@ -1226,12 +1229,12 @@ bool Game_BattleAlgorithm::Skill::ActionIsPossible() const {
 	return true;
 }
 
-Game_BattleAlgorithm::Item::Item(Game_Battler* source, Game_Battler* target, const lcf::rpg::Item& item) :
+Game_BattleAlgorithm::Item::Item(Game_Battler* source, Game_Battler* target, const lcf::rpg::SaveUniqueItems& item) :
 	AlgorithmBase(Type::Item, source, target), item(item) {
 		// no-op
 }
 
-Game_BattleAlgorithm::Item::Item(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::Item& item) :
+Game_BattleAlgorithm::Item::Item(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::SaveUniqueItems& item) :
 	AlgorithmBase(Type::Item, source, target), item(item) {
 		// no-op
 }
@@ -1241,7 +1244,7 @@ bool Game_BattleAlgorithm::Item::vStart() {
 	return true;
 }
 
-Game_BattleAlgorithm::Item::Item(Game_Battler* source, const lcf::rpg::Item& item) :
+Game_BattleAlgorithm::Item::Item(Game_Battler* source, const lcf::rpg::SaveUniqueItems& item) :
 	Item(source, source, item) {}
 
 bool Game_BattleAlgorithm::Item::IsTargetValid(const Game_Battler&) const {
@@ -1300,10 +1303,11 @@ bool Game_BattleAlgorithm::Item::vExecute() {
 
 std::string Game_BattleAlgorithm::Item::GetStartMessage(int line) const {
 	if (line == 0) {
+		const auto i = lcf::ReaderUtil::GetElement(lcf::Data::items, item.ID);
 		if (Feature::HasRpg2kBattleSystem()) {
-			return BattleMessage::GetItemStartMessage2k(*GetSource(), item);
+			return BattleMessage::GetItemStartMessage2k(*GetSource(), *i);
 		} else {
-			return BattleMessage::GetItemStartMessage2k3(*GetSource(), item);
+			return BattleMessage::GetItemStartMessage2k3(*GetSource(), *i);
 		}
 	}
 	return "";
@@ -1316,8 +1320,9 @@ int Game_BattleAlgorithm::Item::GetSourcePose() const {
 int Game_BattleAlgorithm::Item::GetCBAMovement() const {
 	auto* source = GetSource();
 	if (source->GetType() == Game_Battler::Type_Ally) {
-		if (static_cast<int>(item.animation_data.size()) > source->GetId() - 1) {
-			return item.animation_data[source->GetId() - 1].movement;
+		auto i = lcf::ReaderUtil::GetElement(lcf::Data::items, item.ID);
+		if (static_cast<int>(i->animation_data.size()) > source->GetId() - 1) {
+			return i->animation_data[source->GetId() - 1].movement;
 		}
 	}
 

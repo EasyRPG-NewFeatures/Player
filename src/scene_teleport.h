@@ -33,7 +33,7 @@ public:
 	 * Constructor.
 	 */
 	Scene_Teleport(Game_Actor& actor, const lcf::rpg::Skill& skill);
-	Scene_Teleport(const lcf::rpg::Item& item, const lcf::rpg::Skill& skill);
+	Scene_Teleport(Game_Item* itemU, const lcf::rpg::Skill& skill);
 
 	void Start() override;
 	void vUpdate() override;
@@ -43,7 +43,8 @@ private:
 
 	Game_Actor* actor = nullptr;
 	const lcf::rpg::Skill* skill = nullptr;
-	const lcf::rpg::Item* item = nullptr;
+
+	Game_Item* itemU = nullptr;
 };
 
 #endif

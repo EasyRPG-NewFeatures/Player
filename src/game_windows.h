@@ -82,6 +82,8 @@ public:
 
 		void Refresh(bool& async_wait);
 
+		void Window_User::Reset(Window_Selectable* w);
+
 		/**
 		 * Does an Async request of all assets.
 		 * @return true when all requests are finished

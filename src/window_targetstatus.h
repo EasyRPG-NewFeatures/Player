@@ -20,6 +20,7 @@
 
 // Headers
 #include "window_base.h"
+#include "game_item.h"
 
 /**
  * Window_TargetStatus class.
@@ -47,7 +48,7 @@ public:
 	 * @param is_item true if ID for an item, otherwise for a skill.
 	 * @param actor_index index position of the actor in the party
 	 */
-	void SetData(int id, bool is_item, int actor_index);
+	void SetData(int id, bool is_item, int actor_index, Game_Item* item = nullptr);
 
 private:
 	/** ID of item or skill. */
@@ -56,6 +57,9 @@ private:
 	bool use_item;
 	/** ID of actor who does the skill. */
 	int actor_index;
+
+	Game_Item* item;
+
 };
 
 #endif

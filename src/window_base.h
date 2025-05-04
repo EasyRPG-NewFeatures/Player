@@ -26,6 +26,7 @@
 #include "main_data.h"
 #include "async_handler.h"
 #include <map>
+#include <game_item.h>
 
 /**
  * Window Base class.
@@ -72,6 +73,10 @@ public:
 	void DrawActorSpValue(const Game_Battler& actor, int cx, int cy) const;
 	int GetValueFontColor(int have, int max, bool can_knockout) const;
 	/** @} */
+
+	void DrawItemName(lcf::rpg::SaveUniqueItems* item, int cx, int cy, bool enabled = true) const;
+
+	void DrawText(int cx, int cy, std::string text) const;
 
 	/**
 	 * Cancels async loading of faces.

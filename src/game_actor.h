@@ -75,6 +75,8 @@ public:
 	 */
 	bool UseItem(int item_id, const Game_Battler* source) override;
 
+	bool UseItem(Game_Item* item, const Game_Battler* source) override;
+
 	/**
 	 * Checks if the actor is permitted to use the item at all.
 	 *
@@ -322,11 +324,13 @@ public:
 	 * @return actor's weapon if equipped and type == lcf::rpg::Item::Type_weapon
 	 */
 	const lcf::rpg::Item* GetWeapon() const;
+	const lcf::rpg::SaveUniqueItems* GetWeaponU() const;
 
 	/**
 	 * @return actor's 2nd weapon if equipped and type == lcf::rpg::Item::Type_weapon
 	 */
 	const lcf::rpg::Item* Get2ndWeapon() const;
+	const lcf::rpg::SaveUniqueItems* Get2ndWeaponU() const;
 
 	/**
 	 * Get all weapons equipped by the actor
@@ -334,26 +338,31 @@ public:
 	 * @param weapon which weapons to retrieve
 	 */
 	std::array<const lcf::rpg::Item*, 2> GetWeapons(Game_Battler::Weapon weapon) const;
+	std::array<const lcf::rpg::SaveUniqueItems*, 2> GetWeaponsU(Game_Battler::Weapon weapon) const;
 
 	/**
 	 * @return actor's shield if equipped and type == lcf::rpg::Item::Type_shield
 	 */
 	const lcf::rpg::Item* GetShield() const;
+	const lcf::rpg::SaveUniqueItems* GetShieldU() const;
 
 	/**
 	 * @return actor's armor if equipped and type == lcf::rpg::Item::Type_armor
 	 */
 	const lcf::rpg::Item* GetArmor() const;
+	const lcf::rpg::SaveUniqueItems* GetArmorU() const;
 
 	/**
 	 * @return actor's helmet if equipped and type == lcf::rpg::Item::Type_helmet
 	 */
 	const lcf::rpg::Item* GetHelmet() const;
+	const lcf::rpg::SaveUniqueItems* GetHelmetU() const;
 
 	/**
 	 * @return actor's accessory if equipped and type == lcf::rpg::Item::Type_accessory
 	 */
 	const lcf::rpg::Item* GetAccessory() const;
+	const lcf::rpg::SaveUniqueItems* GetAccessoryU() const;
 
 	/**
 	 * Gets actor current level.
@@ -451,6 +460,10 @@ public:
 	 */
 	const lcf::rpg::Item* GetEquipment(int equip_type) const;
 
+	lcf::rpg::SaveUniqueItems* GetEquipmentU(int equip_type);
+
+	const lcf::rpg::SaveUniqueItems* GetEquipmentU(int equip_type) const;
+
 	/**
 	 * Sets the equipment based on the type.
 	 *
@@ -459,6 +472,7 @@ public:
 	 * @return item_id of old item, or 0 if no equipment or -1 if invalid.
 	 */
 	int SetEquipment(int equip_type, int new_item_id);
+	lcf::rpg::SaveUniqueItems* SetEquipment(int equip_type, lcf::rpg::SaveUniqueItems* item);
 
 	/**
 	 * Changes the equipment of the actor.
@@ -471,6 +485,7 @@ public:
 	 * @param item_id item to equip.
 	 */
 	void ChangeEquipment(int equip_type, int item_id);
+	void ChangeEquipment(int equip_type, lcf::rpg::SaveUniqueItems* new_item);
 
 	/**
 	 * Returns an array of all equipped item IDs (or 0 for none).
@@ -478,6 +493,7 @@ public:
 	 * @return equipped item array
 	 */
 	const std::vector<int16_t>& GetWholeEquipment() const;
+	const std::vector<lcf::rpg::SaveUniqueItems>& GetWholeEquipmentU() const;
 
 	/**
 	 * Checks if the actor has a specific item equipped.
@@ -499,6 +515,7 @@ public:
 	 * @return number of items.
 	 */
 	int GetItemCount(int item_id);
+	int GetItemCount(Game_Item* item);
 
 	/**
 	 * Gets learned skills list.
@@ -932,6 +949,7 @@ public:
 
 private:
 	void AdjustEquipmentStates(const lcf::rpg::Item* item, bool add, bool allow_battle_states);
+	void AdjustEquipmentStates(const lcf::rpg::SaveUniqueItems* item, bool add, bool allow_battle_states);
 	void Fixup();
 
 	/**
@@ -1044,6 +1062,10 @@ inline std::vector<int16_t>& Game_Actor::GetStates() {
 
 inline const std::vector<int16_t>& Game_Actor::GetWholeEquipment() const {
 	return data.equipped;
+}
+
+inline const std::vector<lcf::rpg::SaveUniqueItems>& Game_Actor::GetWholeEquipmentU() const {
+	return data.unique_equipments;
 }
 
 inline int Game_Actor::GetId() const {

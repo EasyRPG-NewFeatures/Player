@@ -144,6 +144,7 @@ bool Scene_Save::Save(std::ostream& os, int slot_id, bool prepare_save) {
 	save.screen = Main_Data::game_screen->GetSaveData();
 	save.pictures = Main_Data::game_pictures->GetSaveData();
 	save.easyrpg_data.windows = Main_Data::game_windows->GetSaveData();
+	save.unique_items = Main_Data::game_party->GetSaveUniqueItem();
 
 	save.system.scene = Scene::instance ? Scene::rpgRtSceneFromSceneType(Scene::instance->type) : -1;
 

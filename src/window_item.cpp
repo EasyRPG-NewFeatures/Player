@@ -39,12 +39,42 @@ const lcf::rpg::Item* Window_Item::GetItem() const {
 	return lcf::ReaderUtil::GetElement(lcf::Data::items, data[index]);
 }
 
+Game_Item* Window_Item::GetItemU() {
+	if (index < 0 || index >= items.size()) {
+		return nullptr;
+	}
+
+	return items[index];
+}
+
 bool Window_Item::CheckInclude(int item_id) {
-	if (data.size() == 0 && item_id == 0) {
+	 if (items.size() == 0 && item_id == 0) {
 		return true;
-	} else {
+	}
+	else {
 		return (item_id > 0);
 	}
+}
+
+bool Window_Item::CheckInclude(Game_Item* item) {
+	if (items.size() == 0 && !item) {
+		return true;
+	}
+	else {
+		return item;
+	}
+}
+
+
+bool Window_Item::CheckEnableU(Game_Item* item) {
+	if (!item) {
+		return false;
+	}
+	if (item->GetItemSave()->type == lcf::rpg::Item::Type_medicine
+		&& (!Game_Battle::IsBattleRunning() || !item->GetItemSave()->occasion_field1)) {
+		return true;
+	}
+	return Main_Data::game_party->IsItemUsable(item->GetItemSave()->ID, actor);
 }
 
 bool Window_Item::CheckEnable(int item_id) {
@@ -63,23 +93,35 @@ void Window_Item::Refresh() {
 	std::vector<int> party_items;
 
 	data.clear();
-	Main_Data::game_party->GetItems(party_items);
 
-	for (size_t i = 0; i < party_items.size(); ++i) {
-		if (this->CheckInclude(party_items[i])) {
-			data.push_back(party_items[i]);
+	items.clear();
+	for (auto item : Main_Data::game_party->items) {
+		if (item->GetItemSave()->quantity > 0) {
+			if (this->CheckInclude(item)) {
+				items.push_back(item);
+			}
 		}
 	}
 
-	if (Game_Battle::IsBattleRunning()) {
-		// Include equipped accessories that invoke skills in sorted order.
-		if (actor) {
-			for (int i = 1; i <= 5; ++i) {
-				const lcf::rpg::Item* item = actor->GetEquipment(i);
-				if (item && item->use_skill && item->skill_id > 0) {
-					auto iter = std::lower_bound(data.begin(), data.end(), item->ID);
-					if (iter == data.end() || *iter != item->ID) {
-						data.insert(iter, item->ID);
+	if (false) {
+		Main_Data::game_party->GetItems(party_items);
+
+		for (size_t i = 0; i < party_items.size(); ++i) {
+			if (this->CheckInclude(party_items[i])) {
+				data.push_back(party_items[i]);
+			}
+		}
+
+		if (Game_Battle::IsBattleRunning()) {
+			// Include equipped accessories that invoke skills in sorted order.
+			if (actor) {
+				for (int i = 1; i <= 5; ++i) {
+					const lcf::rpg::Item* item = actor->GetEquipment(i);
+					if (item && item->use_skill && item->skill_id > 0) {
+						auto iter = std::lower_bound(data.begin(), data.end(), item->ID);
+						if (iter == data.end() || *iter != item->ID) {
+							data.insert(iter, item->ID);
+						}
 					}
 				}
 			}
@@ -87,10 +129,11 @@ void Window_Item::Refresh() {
 	}
 
 	if (CheckInclude(0)) {
-		data.push_back(0);
+		//data.push_back(0);
+		items.push_back(nullptr);
 	}
 
-	item_max = data.size();
+	item_max = items.size();
 
 	CreateContents();
 
@@ -107,21 +150,17 @@ void Window_Item::DrawItem(int index) {
 	Rect rect = GetItemRect(index);
 	contents->ClearRect(rect);
 
-	int item_id = data[index];
+	auto item = items[index];
+	if (!item)
+		return;
+
+	int item_id = item->GetItemSave()->ID;
 
 	if (item_id > 0) {
-		int number = Main_Data::game_party->GetItemCount(item_id);
+		int number = Main_Data::game_party->GetItemCount(item);
 
-		// Items are guaranteed to be valid
-		const lcf::rpg::Item* item = lcf::ReaderUtil::GetElement(lcf::Data::items, item_id);
-		if (actor) {
-			if (item->use_skill) {
-				number += actor->GetItemCount(item_id);
-			}
-		}
-
-		bool enabled = CheckEnable(item_id);
-		DrawItemName(*item, rect.x, rect.y, enabled);
+		bool enabled = CheckEnableU(item);
+		DrawItemName(items[index]->GetItemSave(), rect.x, rect.y, enabled);
 
 		Font::SystemColor color = enabled ? Font::ColorDefault : Font::ColorDisabled;
 		contents->TextDraw(rect.x + rect.width - 24, rect.y, color, fmt::format("{}{:3d}", lcf::rpg::Terms::TermOrDefault(lcf::Data::terms.easyrpg_item_number_separator, ":"), number));
@@ -129,7 +168,7 @@ void Window_Item::DrawItem(int index) {
 }
 
 void Window_Item::UpdateHelp() {
-	help_window->SetText(GetItem() == nullptr ? "" : ToString(GetItem()->description));
+	help_window->SetText(GetItemU() == nullptr ? "" : ToString(GetItemU()->GetItemSave()->description));
 }
 
 void Window_Item::SetActor(Game_Actor * actor) {

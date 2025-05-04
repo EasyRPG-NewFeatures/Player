@@ -45,7 +45,7 @@ void Window_TargetStatus::Refresh() {
 	// Scene_ActorTarget validates items and skills
 	std::string str;
 	if (use_item) {
-		str = std::to_string(Main_Data::game_party->GetItemCount(id));
+		str = std::to_string(Main_Data::game_party->GetItemCount(item));
 	} else {
 		str = std::to_string((*Main_Data::game_party)[actor_index].CalculateSkillCost(id));
 	}
@@ -54,10 +54,11 @@ void Window_TargetStatus::Refresh() {
 	contents->TextDraw(contents->GetWidth(), 2, Font::ColorDefault, str, Text::AlignRight);
 }
 
-void Window_TargetStatus::SetData(int id, bool is_item, int actor_index) {
+void Window_TargetStatus::SetData(int id, bool is_item, int actor_index, Game_Item* item) {
 	this->id = id;
 	use_item = is_item;
 	this->actor_index = actor_index;
 
+	this->item = item;
 	Refresh();
 }

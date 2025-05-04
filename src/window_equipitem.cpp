@@ -26,7 +26,7 @@ Window_EquipItem::Window_EquipItem(int ix, int iy, int iwidth, int iheight, int 
 	Window_Item(ix, iy, iwidth, iheight),
 	actor_id(actor_id) {
 	this->equip_type = equip_type;
-	if (equip_type > 4 || equip_type < 0) {
+	if (equip_type > 5 || equip_type < 0) {
 		this->equip_type = Window_EquipItem::other;
 	}
 
@@ -38,6 +38,8 @@ Window_EquipItem::Window_EquipItem(int ix, int iy, int iwidth, int iheight, int 
 }
 
 bool Window_EquipItem::CheckInclude(int item_id) {
+	if (actor_id == 0)
+		return true;
 	// Do not show equippable items if the actor has its equipment fixed
 	if (Main_Data::game_actors->GetActor(actor_id)->IsEquipmentFixed(false)) {
 		return false;
@@ -85,7 +87,75 @@ bool Window_EquipItem::CheckInclude(int item_id) {
 	}
 }
 
+bool Window_EquipItem::CheckInclude(Game_Item* item) {
+	if (!item)
+		return true;
+	int item_id = item->GetItemSave()->ID;
+	// Do not show equippable items if the actor has its equipment fixed
+	if (actor_id != 0)
+		if (Main_Data::game_actors->GetActor(actor_id)->IsEquipmentFixed(false)) {
+			return false;
+		}
+
+	// Add the empty element
+	if (item_id == 0) {
+		return true;
+	}
+
+	bool result = false;
+
+	switch (equip_type) {
+	case Window_EquipItem::weapon:
+		result = item->GetItemSave()->type == lcf::rpg::Item::Type_weapon;
+		break;
+	case Window_EquipItem::shield:
+		result = item->GetItemSave()->type == lcf::rpg::Item::Type_shield;
+		break;
+	case Window_EquipItem::armor:
+		result = item->GetItemSave()->type == lcf::rpg::Item::Type_armor;
+		break;
+	case Window_EquipItem::helmet:
+		result = item->GetItemSave()->type == lcf::rpg::Item::Type_helmet;
+		break;
+	case Window_EquipItem::other:
+		result = item->GetItemSave()->type == lcf::rpg::Item::Type_accessory;
+		break;
+	case Window_EquipItem::equipment:
+		result = item->GetItemSave()->type == lcf::rpg::Item::Type_accessory ||
+			item->GetItemSave()->type == lcf::rpg::Item::Type_helmet ||
+			item->GetItemSave()->type == lcf::rpg::Item::Type_armor ||
+			item->GetItemSave()->type == lcf::rpg::Item::Type_shield ||
+			item->GetItemSave()->type == lcf::rpg::Item::Type_weapon;
+
+		break;
+	default:
+		return false;
+	}
+
+	if (result) {
+		// Check if the party has the item at least once
+		if (Main_Data::game_party->GetItemCount(item) == 0) {
+			return false;
+		}
+		else {
+			if (actor_id != 0)
+				return Main_Data::game_actors->GetActor(actor_id)->IsEquippable(item_id);
+			else
+				return true;
+		}
+	}
+	else {
+		return false;
+	}
+}
+
 bool Window_EquipItem::CheckEnable(int item_id) {
 	(void)item_id;
 	return true;
 }
+
+bool Window_EquipItem::CheckEnableU(Game_Item* item) {
+	(void)item;
+	return true;
+}
+

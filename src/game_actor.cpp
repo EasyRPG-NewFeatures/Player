@@ -119,8 +119,23 @@ Game_Actor::Game_Actor(int actor_id) {
 		return lcf::ReaderUtil::GetElement(lcf::Data::items, item_id) == nullptr;
 	}, 0);
 
+	if (data.unique_equipments.size() == 0) {
+		data.unique_equipments.resize(5);
+		data.unique_equipments[0] = lcf::rpg::SaveUniqueItems();
+		data.unique_equipments[1] = lcf::rpg::SaveUniqueItems();
+		data.unique_equipments[2] = lcf::rpg::SaveUniqueItems();
+		data.unique_equipments[3] = lcf::rpg::SaveUniqueItems();
+		data.unique_equipments[4] = lcf::rpg::SaveUniqueItems();
+	}
+
 	for (int i = 0; i <= 4; i++) {
-		SetEquipment(i + 1, ids[i]);
+		Game_Item* item = nullptr;
+		if (ids[i] > 0) 
+			item = new Game_Item(ids[i]);
+		if (item)
+			SetEquipment(i + 1, item->GetItemSave());
+
+		data.equipped[i] = 0;
 	}
 
 	data.status.resize(lcf::Data::states.size(), 0);
@@ -195,6 +210,32 @@ bool Game_Actor::UseItem(int item_id, const Game_Battler* source) {
 	return Game_Battler::UseItem(item_id, source);
 }
 
+bool Game_Actor::UseItem(Game_Item* item, const Game_Battler* source) {
+	if (item == NULL) {
+		Output::Warning("UseItem: Can't use invalid item");
+		return false;
+	}
+
+	if (!IsDead()) {
+		if (item->GetItemSave()->type == lcf::rpg::Item::Type_book) {
+			return LearnSkill(item->GetItemSave()->skill_id, nullptr);
+		}
+
+		if (item->GetItemSave()->type == lcf::rpg::Item::Type_material) {
+			SetBaseMaxHp(GetBaseMaxHp() + item->GetItemSave()->max_hp_points);
+			SetBaseMaxSp(GetBaseMaxSp() + item->GetItemSave()->max_sp_points);
+			SetBaseAtk(GetBaseAtk() + item->GetItemSave()->atk_points2);
+			SetBaseDef(GetBaseDef() + item->GetItemSave()->def_points2);
+			SetBaseAgi(GetBaseAgi() + item->GetItemSave()->agi_points2);
+			SetBaseSpi(GetBaseSpi() + item->GetItemSave()->spi_points2);
+
+			return true;
+		}
+	}
+
+	return Game_Battler::UseItem(item, source);
+}
+
 bool Game_Actor::IsItemUsable(int item_id) const {
 	const lcf::rpg::Item* item = lcf::ReaderUtil::GetElement(lcf::Data::items, item_id);
 	if (!item) {
@@ -233,8 +274,8 @@ bool Game_Actor::IsSkillUsable(int skill_id) const {
 
 	if (!skill->affect_attr_defence) {
 		// Actor must have all attributes of the skill equipped as weapons
-		const auto* w1 = GetWeapon();
-		const auto* w2 = Get2ndWeapon();
+		const auto* w1 = GetWeaponU();
+		const auto* w2 = Get2ndWeaponU();
 
 		for (size_t i = 0; i < skill->attribute_effects.size(); ++i) {
 			bool required = skill->attribute_effects[i] && lcf::Data::attributes[i].type == lcf::rpg::Attribute::Type_physical;
@@ -333,6 +374,47 @@ const lcf::rpg::Item* Game_Actor::GetEquipment(int equip_type) const {
 	return lcf::ReaderUtil::GetElement(lcf::Data::items, item_id);
 }
 
+lcf::rpg::SaveUniqueItems* Game_Actor::GetEquipmentU(int equip_type)
+{
+	if (equip_type <= 0 || equip_type > (int)data.unique_equipments.size())
+		return nullptr;
+
+	return &data.unique_equipments[equip_type - 1];
+}
+
+const lcf::rpg::SaveUniqueItems* Game_Actor::GetEquipmentU(int equip_type) const
+{
+	if (equip_type <= 0 || equip_type > (int)data.unique_equipments.size())
+		return nullptr;
+
+	return &data.unique_equipments[equip_type - 1];
+}
+
+lcf::rpg::SaveUniqueItems* Game_Actor::SetEquipment(int equip_type, lcf::rpg::SaveUniqueItems* new_item) {
+
+	if (equip_type <= 0 || equip_type > (int)data.unique_equipments.size())
+		return nullptr;
+
+	lcf::rpg::SaveUniqueItems* old_item = nullptr;
+	if (data.unique_equipments.size() > equip_type - 1) {
+		old_item = new lcf::rpg::SaveUniqueItems(data.unique_equipments[equip_type - 1]);
+	}
+
+	if (!new_item) {
+		return old_item;
+	}
+
+	data.unique_equipments[equip_type - 1] = *new_item;
+
+	if (old_item)
+		AdjustEquipmentStates(old_item, false, false);
+
+	AdjustEquipmentStates(new_item, true, false);
+
+
+	return old_item;
+}
+
 int Game_Actor::SetEquipment(int equip_type, int new_item_id) {
 	if (equip_type <= 0 || equip_type > (int) data.equipped.size())
 		return -1;
@@ -379,6 +461,34 @@ void Game_Actor::ChangeEquipment(int equip_type, int item_id) {
 	}
 }
 
+void Game_Actor::ChangeEquipment(int equip_type, lcf::rpg::SaveUniqueItems* new_item) {
+	int item_id = new_item->ID;
+	if (item_id != 0 && !IsItemUsable(item_id)) {
+		return;
+	}
+
+	auto prev_item = SetEquipment(equip_type, new_item);
+
+	if (prev_item->ID != 0) {
+		Main_Data::game_party->AddItem(prev_item, 1);
+	}
+	if (item_id != 0) {
+		Main_Data::game_party->RemoveItem(new_item, 1);
+	}
+
+	// In case you have a two_handed weapon equipped, the other weapon is removed.
+	const auto* item = GetWeaponU();
+	const auto* item2 = Get2ndWeaponU();
+	if (item2 == nullptr) {
+		item2 = GetShieldU();
+	}
+	if (item && item2 && ((item->type == lcf::rpg::Item::Type_weapon && item->two_handed) || (item2->type == lcf::rpg::Item::Type_weapon && item2->two_handed))) {
+		auto* item_null = new lcf::rpg::SaveUniqueItems;
+		ChangeEquipment(equip_type == lcf::rpg::Item::Type_weapon ? equip_type + 1 : equip_type - 1, item_null);
+	}
+}
+
+
 bool Game_Actor::IsEquipped(int equip_id) const {
 	for (auto equip : GetWholeEquipment()) {
 		if (equip == equip_id) {
@@ -402,6 +512,23 @@ int Game_Actor::GetItemCount(int item_id) {
 	if (item_id >= 0) {
 		for (int16_t i : GetWholeEquipment()) {
 			if (item_id == i) {
+				++number;
+			}
+		}
+	}
+
+	return number;
+}
+
+int Game_Actor::GetItemCount(Game_Item* item) {
+	int number = 0;
+	int item_id = item->GetItemSave()->ID;
+
+	// quirk: 0 is "no item in slot"
+	// This can be used to count how many slots are empty
+	if (item_id >= 0) {
+		for (auto i : GetWholeEquipmentU()) {
+			if (item->GetItemSave() == &i) {
 				++number;
 			}
 		}
@@ -466,6 +593,13 @@ static bool IsArmorType(const lcf::rpg::Item* item) {
 		|| item->type == lcf::rpg::Item::Type_accessory;
 }
 
+static bool IsArmorType(const lcf::rpg::SaveUniqueItems* item) {
+	return item->type == lcf::rpg::Item::Type_shield
+		|| item->type == lcf::rpg::Item::Type_armor
+		|| item->type == lcf::rpg::Item::Type_helmet
+		|| item->type == lcf::rpg::Item::Type_accessory;
+}
+
 template <bool allow_weapon, bool allow_armor, typename F>
 void ForEachEquipment(Span<const short> equipped, F&& f, Game_Battler::Weapon weapon = Game_Battler::WeaponAll) {
 	for (int slot = 0; slot < static_cast<int>(equipped.size()); ++slot) {
@@ -495,6 +629,34 @@ void ForEachEquipment(Span<const short> equipped, F&& f, Game_Battler::Weapon we
 	}
 }
 
+template <bool allow_weapon, bool allow_armor, typename F>
+void ForEachEquipmentU(std::vector<lcf::rpg::SaveUniqueItems> equipped, F&& f, Game_Battler::Weapon weapon = Game_Battler::WeaponAll) {
+	for (int slot = 0; slot < static_cast<int>(equipped.size()); ++slot) {
+		auto* item = &equipped[slot];
+		if (item->ID != 0)
+		{
+			// Invalid equipment was removed
+
+			if (item->type == lcf::rpg::Item::Type_weapon) {
+				if (!allow_weapon || (weapon != Game_Battler::WeaponAll && weapon != slot + 1)) {
+					continue;
+				}
+			}
+			else if (IsArmorType(item)) {
+				if (!allow_armor) {
+					continue;
+				}
+			}
+			else {
+				assert(false && "Invalid item type equipped!");
+				continue;
+			}
+
+			f(*item);
+		}
+	}
+}
+
 int Game_Actor::GetBaseAtk(Weapon weapon, bool mod, bool equip) const {
 	int n = 0;
 	if (GetLevel() > 0) {
@@ -508,7 +670,8 @@ int Game_Actor::GetBaseAtk(Weapon weapon, bool mod, bool equip) const {
 	}
 
 	if (equip) {
-		ForEachEquipment<true,true>(GetWholeEquipment(), [&](auto& item) { n += item.atk_points1; }, weapon);
+		//ForEachEquipment<true,true>(GetWholeEquipment(), [&](auto& item) { n += item.atk_points1; }, weapon);
+		ForEachEquipmentU<true, true>(GetWholeEquipmentU(), [&](auto& item) { n += item.atk_points1; }, weapon);
 	}
 
 	return Utils::Clamp(n, 1, MaxStatBaseValue());
@@ -531,7 +694,8 @@ int Game_Actor::GetBaseDef(Weapon weapon, bool mod, bool equip) const {
 	}
 
 	if (equip) {
-		ForEachEquipment<true,true>(GetWholeEquipment(), [&](auto& item) { n += item.def_points1; }, weapon);
+		//ForEachEquipment<true,true>(GetWholeEquipment(), [&](auto& item) { n += item.def_points1; }, weapon);
+		ForEachEquipmentU<true, true>(GetWholeEquipmentU(), [&](auto& item) { n += item.def_points1; }, weapon);
 	}
 
 	return Utils::Clamp(n, 1, MaxStatBaseValue());
@@ -554,7 +718,8 @@ int Game_Actor::GetBaseSpi(Weapon weapon, bool mod, bool equip) const {
 	}
 
 	if (equip) {
-		ForEachEquipment<true,true>(GetWholeEquipment(), [&](auto& item) { n += item.spi_points1; }, weapon);
+		//ForEachEquipment<true,true>(GetWholeEquipment(), [&](auto& item) { n += item.spi_points1; }, weapon);
+		ForEachEquipmentU<true, true>(GetWholeEquipmentU(), [&](auto& item) { n += item.spi_points1; }, weapon);
 	}
 
 	return Utils::Clamp(n, 1, MaxStatBaseValue());
@@ -577,7 +742,8 @@ int Game_Actor::GetBaseAgi(Weapon weapon, bool mod, bool equip) const {
 	}
 
 	if (equip) {
-		ForEachEquipment<true,true>(GetWholeEquipment(), [&](auto& item) { n += item.agi_points1; }, weapon);
+		//ForEachEquipment<true,true>(GetWholeEquipment(), [&](auto& item) { n += item.agi_points1; }, weapon);
+		ForEachEquipmentU<true, true>(GetWholeEquipmentU(), [&](auto& item) { n += item.agi_points1; }, weapon);
 	}
 
 	return Utils::Clamp(n, 1, MaxStatBaseValue());
@@ -1410,6 +1576,57 @@ const lcf::rpg::Item* Game_Actor::GetAccessory() const {
 	return nullptr;
 }
 
+const lcf::rpg::SaveUniqueItems* Game_Actor::GetWeaponU() const {
+	auto* weapon = GetEquipmentU(lcf::rpg::Item::Type_weapon);
+	if (weapon && weapon->type == lcf::rpg::Item::Type_weapon) {
+		return weapon;
+	}
+	return nullptr;
+}
+
+const lcf::rpg::SaveUniqueItems* Game_Actor::Get2ndWeaponU() const {
+	// Checking of HasTwoWeapons() not neccessary. If true, the
+	// item equipped in this slot will never be a weapon from
+	// legitimate means.
+	auto* weapon = GetEquipmentU(lcf::rpg::Item::Type_shield);
+	if (weapon && weapon->type == lcf::rpg::Item::Type_weapon) {
+		return weapon;
+	}
+	return nullptr;
+}
+
+const lcf::rpg::SaveUniqueItems* Game_Actor::GetShieldU() const {
+	auto* shield = GetEquipmentU(lcf::rpg::Item::Type_shield);
+	if (shield && shield->type == lcf::rpg::Item::Type_shield) {
+		return shield;
+	}
+	return nullptr;
+}
+
+const lcf::rpg::SaveUniqueItems* Game_Actor::GetArmorU() const {
+	auto* armor = GetEquipmentU(lcf::rpg::Item::Type_armor);
+	if (armor && armor->type == lcf::rpg::Item::Type_armor) {
+		return armor;
+	}
+	return nullptr;
+}
+
+const lcf::rpg::SaveUniqueItems* Game_Actor::GetHelmetU() const {
+	auto* helmet = GetEquipmentU(lcf::rpg::Item::Type_helmet);
+	if (helmet && helmet->type == lcf::rpg::Item::Type_helmet) {
+		return helmet;
+	}
+	return nullptr;
+}
+
+const lcf::rpg::SaveUniqueItems* Game_Actor::GetAccessoryU() const {
+	auto* accessory = GetEquipmentU(lcf::rpg::Item::Type_accessory);
+	if (accessory && accessory->type == lcf::rpg::Item::Type_accessory) {
+		return accessory;
+	}
+	return nullptr;
+}
+
 bool Game_Actor::HasPreemptiveAttack(Weapon weapon) const {
 	bool rc = false;
 	ForEachEquipment<true, false>(GetWholeEquipment(), [&](auto& item) { rc |= item.preemptive; }, weapon);
@@ -1417,29 +1634,29 @@ bool Game_Actor::HasPreemptiveAttack(Weapon weapon) const {
 }
 
 int Game_Actor::GetNumberOfAttacks(Weapon weapon) const {
-	if (GetWeapon() == nullptr && Get2ndWeapon() == nullptr && dbActor->easyrpg_dual_attack) {
+	if (GetWeaponU() == nullptr && Get2ndWeaponU() == nullptr && dbActor->easyrpg_dual_attack) {
 		return 2;
 	}
 	int hits = 1;
-	ForEachEquipment<true, false>(GetWholeEquipment(), [&](auto& item) { hits = std::max(hits, Algo::GetNumberOfAttacks(GetId(), item)); }, weapon);
+	ForEachEquipmentU<true, false>(GetWholeEquipmentU(), [&](lcf::rpg::SaveUniqueItems& item) { hits = std::max(hits, Algo::GetNumberOfAttacks(GetId(), item)); }, weapon);
 	return hits;
 }
 
 bool Game_Actor::HasAttackAll(Weapon weapon) const {
-	if (GetWeapon() == nullptr && Get2ndWeapon() == nullptr) {
+	if (GetWeaponU() == nullptr && Get2ndWeaponU() == nullptr) {
 		return dbActor->easyrpg_attack_all;
 	}
 	bool rc = false;
-	ForEachEquipment<true, false>(GetWholeEquipment(), [&](auto& item) { rc |= item.attack_all; }, weapon);
+	ForEachEquipmentU<true, false>(GetWholeEquipmentU(), [&](auto& item) { rc |= item.attack_all; }, weapon);
 	return rc;
 }
 
 bool Game_Actor::AttackIgnoresEvasion(Weapon weapon) const {
-	if (GetWeapon() == nullptr && Get2ndWeapon() == nullptr) {
+	if (GetWeaponU() == nullptr && Get2ndWeaponU() == nullptr) {
 		return dbActor->easyrpg_ignore_evasion;
 	}
 	bool rc = false;
-	ForEachEquipment<true, false>(GetWholeEquipment(), [&](auto& item) { rc |= item.ignore_evasion; }, weapon);
+	ForEachEquipmentU<true, false>(GetWholeEquipmentU(), [&](auto& item) { rc |= item.ignore_evasion; }, weapon);
 	return rc;
 }
 
@@ -1448,13 +1665,13 @@ bool Game_Actor::PreventsCritical() const {
 		return true;
 	}
 	bool rc = false;
-	ForEachEquipment<false, true>(GetWholeEquipment(), [&](auto& item) { rc |= item.prevent_critical; });
+	ForEachEquipmentU<false, true>(GetWholeEquipmentU(), [&](auto& item) { rc |= item.prevent_critical; });
 	return rc;
 }
 
 bool Game_Actor::PreventsTerrainDamage() const {
 	bool rc = false;
-	ForEachEquipment<false, true>(GetWholeEquipment(), [&](auto& item) { rc |= item.no_terrain_damage; });
+	ForEachEquipmentU<false, true>(GetWholeEquipmentU(), [&](auto& item) { rc |= item.no_terrain_damage; });
 	return rc;
 }
 
@@ -1463,19 +1680,19 @@ bool Game_Actor::HasPhysicalEvasionUp() const {
 		return true;
 	}
 	bool rc = false;
-	ForEachEquipment<false, true>(GetWholeEquipment(), [&](auto& item) { rc |= item.raise_evasion; });
+	ForEachEquipmentU<false, true>(GetWholeEquipmentU(), [&](auto& item) { rc |= item.raise_evasion; });
 	return rc;
 }
 
 bool Game_Actor::HasHalfSpCost() const {
 	bool rc = false;
-	ForEachEquipment<false, true>(GetWholeEquipment(), [&](auto& item) { rc |= item.half_sp_cost; });
+	ForEachEquipmentU<false, true>(GetWholeEquipmentU(), [&](auto& item) { rc |= item.half_sp_cost; });
 	return rc;
 }
 
 int Game_Actor::CalculateWeaponSpCost(Weapon weapon) const {
 	int cost = 0;
-	ForEachEquipment<true, false>(GetWholeEquipment(), [&](auto& item) { cost += item.sp_cost; }, weapon);
+	ForEachEquipmentU<true, false>(GetWholeEquipmentU(), [&](auto& item) { cost += item.sp_cost; }, weapon);
 	if (HasHalfSpCost()) {
 		cost = (cost + 1) / 2;
 	}
@@ -1503,12 +1720,34 @@ void Game_Actor::AdjustEquipmentStates(const lcf::rpg::Item* item, bool add, boo
 	}
 }
 
+void Game_Actor::AdjustEquipmentStates(const lcf::rpg::SaveUniqueItems* item, bool add, bool allow_battle_states) {
+	// All states inflicted by new armor get inflicted.
+	if (Player::IsRPG2k3()
+		&& item
+		&& IsArmorType(item)
+		&& item->reverse_state_effect)
+	{
+		auto& states = item->state_set;
+		for (int i = 0; i < (int)states.size(); ++i) {
+			if (states[i]) {
+				if (add) {
+					AddState(i + 1, allow_battle_states);
+				}
+				else {
+					RemoveState(i + 1, false);
+				}
+			}
+		}
+	}
+}
+
+
 
 void Game_Actor::ResetEquipmentStates(bool allow_battle_states) {
-	AdjustEquipmentStates(GetShield(), true, allow_battle_states);
-	AdjustEquipmentStates(GetArmor(), true, allow_battle_states);
-	AdjustEquipmentStates(GetHelmet(), true, allow_battle_states);
-	AdjustEquipmentStates(GetAccessory(), true, allow_battle_states);
+	AdjustEquipmentStates(GetShieldU(), true, allow_battle_states);
+	AdjustEquipmentStates(GetArmorU(), true, allow_battle_states);
+	AdjustEquipmentStates(GetHelmetU(), true, allow_battle_states);
+	AdjustEquipmentStates(GetAccessoryU(), true, allow_battle_states);
 }
 
 PermanentStates Game_Actor::GetPermanentStates() const {
@@ -1517,7 +1756,7 @@ PermanentStates Game_Actor::GetPermanentStates() const {
 		return ps;
 	}
 
-	auto addEquip = [&](const lcf::rpg::Item* item) {
+	auto addEquip = [&](const lcf::rpg::SaveUniqueItems* item) {
 		if (!item || !IsArmorType(item) || !item->reverse_state_effect) {
 			return;
 		}
@@ -1532,10 +1771,10 @@ PermanentStates Game_Actor::GetPermanentStates() const {
 		}
 	};
 
-	addEquip(GetShield());
-	addEquip(GetArmor());
-	addEquip(GetHelmet());
-	addEquip(GetAccessory());
+	addEquip(GetShieldU());
+	addEquip(GetArmorU());
+	addEquip(GetHelmetU());
+	addEquip(GetAccessoryU());
 
 	return ps;
 }
@@ -1553,6 +1792,19 @@ std::array<const lcf::rpg::Item*, 2> Game_Actor::GetWeapons(Game_Battler::Weapon
 	}
 	if (weapon == Game_Battler::WeaponSecondary || weapon == Game_Battler::WeaponAll) {
 		w[i] = Get2ndWeapon();
+	}
+	return w;
+}
+
+std::array<const lcf::rpg::SaveUniqueItems*, 2> Game_Actor::GetWeaponsU(Game_Battler::Weapon weapon) const {
+	std::array<const lcf::rpg::SaveUniqueItems*, 2> w = { {} };
+	int i = 0;
+	if (weapon == Game_Battler::WeaponPrimary || weapon == Game_Battler::WeaponAll) {
+		w[i] = GetWeaponU();
+		if (w[i]) { ++i; }
+	}
+	if (weapon == Game_Battler::WeaponSecondary || weapon == Game_Battler::WeaponAll) {
+		w[i] = Get2ndWeaponU();
 	}
 	return w;
 }

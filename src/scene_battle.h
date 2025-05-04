@@ -147,7 +147,7 @@ protected:
 	virtual void ItemSelected();
 	virtual void SkillSelected();
 
-	virtual void AssignSkill(const lcf::rpg::Skill* skill, const lcf::rpg::Item* item);
+	virtual void AssignSkill(const lcf::rpg::Skill* skill, const lcf::rpg::SaveUniqueItems* item);
 
 	/**
 	 * Executed when selection an action (normal, skill, item, ...) and

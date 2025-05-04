@@ -24,6 +24,10 @@
 #include "game_party_base.h"
 #include "game_actor.h"
 #include <lcf/rpg/saveinventory.h>
+#include <game_item.h>
+#include <map>
+#include <lcf/rpg/saveuniqueitems.h>
+#include "output.h"
 
 /**
  * Game_Party class.
@@ -43,9 +47,11 @@ public:
 
 	/** Initialize from save game */
 	void SetupFromSave(lcf::rpg::SaveInventory save);
+	void SetupFromSaveUniqueItem(std::vector<lcf::rpg::SaveUniqueItems> save);
 
 	/** @return save game data */
 	const lcf::rpg::SaveInventory& GetSaveData() const;
+	std::vector<lcf::rpg::SaveUniqueItems> GetSaveUniqueItem();
 
 	Game_Actor& operator[] (const int index) override;
 
@@ -117,6 +123,8 @@ public:
 	 */
 	int GetItemCount(int item_id) const;
 
+	int GetItemCount(Game_Item* item) const;
+
 	/**
 	 * Gets number of item equipped by the party.
 	 *
@@ -124,6 +132,7 @@ public:
 	 * @return number of items.
 	 */
 	int GetEquippedItemCount(int item_id) const;
+	int GetEquippedItemCount(Game_Item* item) const;
 
 	/**
 	 * Gets number of item in inventory and equipped by party.
@@ -149,6 +158,9 @@ public:
 	 */
 	void AddItem(int item_id, int amount);
 
+	void AddItem(lcf::rpg::SaveUniqueItems* new_item, int amount);
+	void AddItem(Game_Item* item, int amount);
+
 	/**
 	 * Loses an amount of items.
 	 *
@@ -157,6 +169,8 @@ public:
 	 */
 	void RemoveItem(int item_id, int amount);
 
+	void RemoveItem(lcf::rpg::SaveUniqueItems* new_item, int amount);
+
 	/**
 	 * Consumes one use of an item (eg. for multi-use items).
 	 * Doesn't actually do anything with the item, just uses up one use.
@@ -164,6 +178,8 @@ public:
 	 * @param item_id database item ID
 	 */
 	void ConsumeItemUse(int item_id);
+
+	void ConsumeItemUse(Game_Item* item);
 
 	/**
 	 * Gets if item can be used.
@@ -175,6 +191,8 @@ public:
 	 */
 	bool IsItemUsable(int item_id, const Game_Actor* target = nullptr) const;
 
+	bool IsItemUsable(Game_Item* item, const Game_Actor* target = nullptr) const;
+
 	/**
 	 * Uses an item on an actor.
 	 * Tests if using that item makes any sense (e.g. for HP healing
@@ -184,6 +202,8 @@ public:
 	 * @param target Target the item is used on (or NULL if its for the party)
 	 */
 	bool UseItem(int item_id, Game_Actor* target = nullptr);
+
+	bool UseItem(Game_Item* item, Game_Actor* target = nullptr);
 
 	/**
 	 * Determines if a skill can be used.
@@ -399,6 +419,7 @@ public:
 	 * @return The first Highest leveled actor who can act.
 	 */
 	Game_Actor* GetHighestLeveledActorWhoCanUse(const lcf::rpg::Item*) const;
+	Game_Actor*  GetHighestLeveledActorWhoCanUse(Game_Item* item) const;
 
 	/**
 	 * If a battle is running, returns the current battle turn for the party.
@@ -414,16 +435,33 @@ public:
 	/** Reset turn counter to 0 */
 	void ResetTurns();
 
+	//std::map<Game_Item, int> items;
+	//std::vector<std::pair<Game_Item, int>> items;
+	std::vector<Game_Item*> items;
+
 private:
 	std::pair<int,bool> GetItemIndex(int item_id) const;
 
 	lcf::rpg::SaveInventory data;
+	std::vector<lcf::rpg::SaveUniqueItems> unique_items;
 };
 
 // ------ INLINES --------
 
 inline const lcf::rpg::SaveInventory& Game_Party::GetSaveData() const {
 	return data;
+}
+
+inline std::vector<lcf::rpg::SaveUniqueItems> Game_Party::GetSaveUniqueItem() {
+
+	unique_items.clear();
+	for (auto i : items) {
+		//lcf::rpg::SaveUniqueItems item = std::move(*i->GetItemSave());
+		lcf::rpg::SaveUniqueItems item = *i->GetItemSave();
+		unique_items.push_back(item);
+	}
+
+	return unique_items;
 }
 
 inline int Game_Party::GetBattleCount() const {

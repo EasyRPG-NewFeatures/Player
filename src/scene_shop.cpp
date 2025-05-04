@@ -287,14 +287,16 @@ void Scene_Shop::UpdateSellSelection() {
 			Scene::Pop();
 		}
 	} else if (Input::IsTriggered(Input::DECISION)) {
-		const lcf::rpg::Item* item = sell_window->GetItem();
-		int item_id = (item != nullptr) ? item->ID : 0;
+		auto* item = sell_window->GetItemU();
+		int item_id = (item != nullptr) ? item->GetItemSave()->ID : 0;
 		status_window->SetItemId(item_id);
+		status_window->SetItem(item);
+
 		party_window->SetItemId(item_id);
 
-		if (item && item->price > 0) {
+		if (item && item->GetItemSave()->price > 0) {
 			Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Decision));
-			number_window->SetData(item->ID, Main_Data::game_party->GetItemCount(item->ID), item->price / 2);
+			number_window->SetData(item->GetItemSave()->ID, Main_Data::game_party->GetItemCount(item->GetItemSave()->ID), item->GetItemSave()->price / 2);
 			SetMode(SellHowMany);
 		} else {
 			Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Buzzer));
@@ -323,9 +325,9 @@ void Scene_Shop::UpdateNumberInput() {
 			status_window->Refresh();
 			SetMode(Bought); break;
 		case Sell:
-			item_id = sell_window->GetItem() == NULL ? 0 : sell_window->GetItem()->ID;
+			item_id = sell_window->GetItemU() == NULL ? 0 : sell_window->GetItemU()->GetItemSave()->ID;
 			Main_Data::game_party->GainGold(number_window->GetTotal());
-			Main_Data::game_party->RemoveItem(item_id, number_window->GetNumber());
+			Main_Data::game_party->RemoveItem(sell_window->GetItemU()->GetItemSave(), number_window->GetNumber());
 			gold_window->Refresh();
 			sell_window->Refresh();
 			status_window->Refresh();

@@ -37,9 +37,17 @@ void Window_ShopStatus::Refresh() {
 	int number = 0;
 	int equipped = 0;
 
-	if (item_id != 0) {
-		number = Main_Data::game_party->GetItemCount(item_id);
-		equipped = Main_Data::game_party->GetEquippedItemCount(item_id);
+	if (item) {
+		if (item->GetItemSave()->ID != 0) {
+			number = Main_Data::game_party->GetItemCount(item);
+			equipped = Main_Data::game_party->GetEquippedItemCount(item);
+		}
+	}
+	else {
+		if (item_id != 0) {
+			number = Main_Data::game_party->GetItemCount(item_id);
+			equipped = Main_Data::game_party->GetEquippedItemCount(item_id);
+		}
 	}
 
 	contents->TextDraw(0, 2, 1, lcf::Data::terms.possessed_items);
@@ -53,6 +61,13 @@ void Window_ShopStatus::Refresh() {
 void Window_ShopStatus::SetItemId(int new_item_id) {
 	if (new_item_id != item_id) {
 		item_id = new_item_id;
+		Refresh();
+	}
+}
+
+void Window_ShopStatus::SetItem(Game_Item* new_item) {
+	if (new_item != item) {
+		item = new_item;
 		Refresh();
 	}
 }

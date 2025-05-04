@@ -23,6 +23,7 @@
 #include "window_actortarget.h"
 #include "window_help.h"
 #include "window_targetstatus.h"
+#include "game_item.h"
 
 /**
  * Scene ActorTarget class.
@@ -37,6 +38,8 @@ public:
 	 * @param item_id item ID of item to use.
 	 */
 	Scene_ActorTarget(int item_id);
+
+	Scene_ActorTarget(Game_Item* item, int item_id);
 
 	/**
 	 * Constructor.
@@ -66,6 +69,8 @@ private:
 	std::unique_ptr<Window_Help> help_window;
 	/** Contains quantity/cost of item/spell. */
 	std::unique_ptr<Window_TargetStatus> status_window;
+
+	Game_Item* item = nullptr;
 
 	/** ID of item/skill to use. */
 	int id;

@@ -50,6 +50,8 @@ public:
 	 */
 	int GetItemId();
 
+	lcf::rpg::SaveUniqueItems* GetItem();
+
 	/**
 	 * Updates the help text.
 	 */
@@ -58,7 +60,7 @@ public:
 private:
 	int actor_id;
 
-	std::vector<int> data;
+	std::vector<lcf::rpg::SaveUniqueItems*> data;
 
 };
 

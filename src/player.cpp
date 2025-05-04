@@ -25,6 +25,7 @@
 #include <fstream>
 #include <memory>
 #include <thread>
+#include "output.h"
 
 #ifdef _WIN32
 #  include "platform/windows/utils.h"
@@ -1165,6 +1166,8 @@ void Player::LoadSavegame(const std::string& save_name, int save_id) {
 	Main_Data::game_targets->SetSaveData(std::move(save->targets));
 	Main_Data::game_player->SetSaveData(save->party_location);
 	Main_Data::game_windows->SetSaveData(std::move(save->easyrpg_data.windows));
+
+	Main_Data::game_party->SetupFromSaveUniqueItem(std::move(save->unique_items));
 
 	int map_id = Main_Data::game_player->GetMapId();
 

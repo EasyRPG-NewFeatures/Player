@@ -33,6 +33,11 @@ Scene_ActorTarget::Scene_ActorTarget(int item_id) :
 	Scene::type = Scene::ActorTarget;
 }
 
+Scene_ActorTarget::Scene_ActorTarget(Game_Item* it, int item_id) :
+	id(item_id), item(it), actor_index(0), use_item(true) {
+		Scene::type = Scene::ActorTarget;
+}
+
 Scene_ActorTarget::Scene_ActorTarget(
 	int skill_id, int actor_index) :
 	id(skill_id), actor_index(actor_index), use_item(false) {
@@ -49,17 +54,16 @@ void Scene_ActorTarget::Start() {
 	target_window->SetIndex(0);
 
 	if (use_item) {
-		const lcf::rpg::Item* item = lcf::ReaderUtil::GetElement(lcf::Data::items, id);
 		if (!item) {
 			Output::Warning("Scene ActorTarget: Invalid item ID {}", id);
 			Scene::Pop();
 			return;
 		}
 		const lcf::rpg::Skill* skill = nullptr;
-		if (item->type == lcf::rpg::Item::Type_special) {
-			skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->skill_id);
+		if (item->GetItemSave()->type == lcf::rpg::Item::Type_special) {
+			skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->GetItemSave()->skill_id);
 			if (!skill) {
-				Output::Warning("Scene ActorTarget: Item {} has invalid skill ID {}", id, item->skill_id);
+				Output::Warning("Scene ActorTarget: Item {} has invalid skill ID {}", id, item->GetItemSave()->skill_id);
 				Scene::Pop();
 				return;
 			}
@@ -67,12 +71,12 @@ void Scene_ActorTarget::Start() {
 				target_window->SetIndex(-100);
 			}
 		} else {
-			if (item->entire_party) {
+			if (item->GetItemSave()->entire_party) {
 				target_window->SetIndex(-100);
 			}
 		}
-		status_window->SetData(id, true, 0);
-		help_window->SetText(ToString(item->name), Font::ColorDefault, Text::AlignLeft, false);
+		status_window->SetData(id, true, 0, item);
+		help_window->SetText(ToString(item->GetItemSave()->name), Font::ColorDefault, Text::AlignLeft, false);
 		return;
 	} else {
 		const lcf::rpg::Skill* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, id);
@@ -112,26 +116,24 @@ void Scene_ActorTarget::vUpdate() {
 
 void Scene_ActorTarget::UpdateItem() {
 	if (Input::IsTriggered(Input::DECISION)) {
-		if (Main_Data::game_party->GetItemCount(id) <= 0) {
+		if (Main_Data::game_party->GetItemCount(item) <= 0) {
 			Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Buzzer));
 			return;
 		}
-		if (Main_Data::game_party->UseItem(id, target_window->GetActor())) {
-			auto* item = lcf::ReaderUtil::GetElement(lcf::Data::items, id);
-			assert(item);
-
-			bool do_skill = (item->type == lcf::rpg::Item::Type_special)
-				|| (item->use_skill && (
-							item->type == lcf::rpg::Item::Type_weapon
-							|| item->type == lcf::rpg::Item::Type_shield
-							|| item->type == lcf::rpg::Item::Type_armor
-							|| item->type == lcf::rpg::Item::Type_helmet
-							|| item->type == lcf::rpg::Item::Type_accessory
+		if (Main_Data::game_party->UseItem(item, target_window->GetActor())) {
+			
+			bool do_skill = (item->GetItemSave()->type == lcf::rpg::Item::Type_special)
+				|| (item->GetItemSave()->use_skill && (
+							item->GetItemSave()->type == lcf::rpg::Item::Type_weapon
+							|| item->GetItemSave()->type == lcf::rpg::Item::Type_shield
+							|| item->GetItemSave()->type == lcf::rpg::Item::Type_armor
+							|| item->GetItemSave()->type == lcf::rpg::Item::Type_helmet
+							|| item->GetItemSave()->type == lcf::rpg::Item::Type_accessory
 							)
 				   );
 
 			if (do_skill) {
-				auto* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->skill_id);
+				auto* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->GetItemSave()->skill_id);
 				assert(skill);
 				auto* animation = lcf::ReaderUtil::GetElement(lcf::Data::animations, skill->animation_id);
 				if (animation) {
@@ -139,6 +141,11 @@ void Scene_ActorTarget::UpdateItem() {
 				}
 			} else {
 				Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_UseItem));
+			}
+
+			if (item->GetItemSave()->ID != id) {
+				Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Cancel));
+				Scene::Pop();
 			}
 		}
 		else {

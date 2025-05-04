@@ -327,23 +327,23 @@ Game_Enemy* Scene_Battle::EnemySelected() {
 		active_actor->SetBattleAlgorithm(
 				std::make_shared<Game_BattleAlgorithm::Skill>(active_actor, target, *skill_window->GetSkill()));
 	} else if (previous_state == State_SelectItem) {
-		auto* item = item_window->GetItem();
+		auto* item = item_window->GetItemU();
 		assert(item);
-		if (item->type == lcf::rpg::Item::Type_special
-				|| (item->use_skill && (item->type == lcf::rpg::Item::Type_weapon
-						|| item->type == lcf::rpg::Item::Type_shield
-						|| item->type == lcf::rpg::Item::Type_armor
-						|| item->type == lcf::rpg::Item::Type_helmet
-						|| item->type == lcf::rpg::Item::Type_accessory)))
+		if (item->GetItemSave()->type == lcf::rpg::Item::Type_special
+				|| (item->GetItemSave()->use_skill && (item->GetItemSave()->type == lcf::rpg::Item::Type_weapon
+						|| item->GetItemSave()->type == lcf::rpg::Item::Type_shield
+						|| item->GetItemSave()->type == lcf::rpg::Item::Type_armor
+						|| item->GetItemSave()->type == lcf::rpg::Item::Type_helmet
+						|| item->GetItemSave()->type == lcf::rpg::Item::Type_accessory)))
 		{
-			const lcf::rpg::Skill* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->skill_id);
+			const lcf::rpg::Skill* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->GetItemSave()->skill_id);
 			if (!skill) {
-				Output::Warning("EnemySelected: Item {} references invalid skill {}", item->ID, item->skill_id);
+				Output::Warning("EnemySelected: Item {} references invalid skill {}", item->GetItemSave()->ID, item->GetItemSave()->skill_id);
 				return nullptr;
 			}
-			active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Skill>(active_actor, target, *skill, item));
+			active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Skill>(active_actor, target, *skill, item->GetItemSave()));
 		} else {
-			active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Item>(active_actor, target, *item));
+			active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Item>(active_actor, target, *item->GetItemSave()));
 		}
 	} else {
 		assert("Invalid previous state for enemy selection" && false);
@@ -360,23 +360,23 @@ Game_Actor* Scene_Battle::AllySelected() {
 	if (previous_state == State_SelectSkill) {
 		active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Skill>(active_actor, &target, *skill_window->GetSkill()));
 	} else if (previous_state == State_SelectItem) {
-		auto* item = item_window->GetItem();
+		auto* item = item_window->GetItemU();
 		assert(item);
-		if (item->type == lcf::rpg::Item::Type_special
-				|| (item->use_skill && (item->type == lcf::rpg::Item::Type_weapon
-						|| item->type == lcf::rpg::Item::Type_shield
-						|| item->type == lcf::rpg::Item::Type_armor
-						|| item->type == lcf::rpg::Item::Type_helmet
-						|| item->type == lcf::rpg::Item::Type_accessory)))
+		if (item->GetItemSave()->type == lcf::rpg::Item::Type_special
+				|| (item->GetItemSave()->use_skill && (item->GetItemSave()->type == lcf::rpg::Item::Type_weapon
+						|| item->GetItemSave()->type == lcf::rpg::Item::Type_shield
+						|| item->GetItemSave()->type == lcf::rpg::Item::Type_armor
+						|| item->GetItemSave()->type == lcf::rpg::Item::Type_helmet
+						|| item->GetItemSave()->type == lcf::rpg::Item::Type_accessory)))
 		{
-			const lcf::rpg::Skill* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->skill_id);
+			const lcf::rpg::Skill* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->GetItemSave()->skill_id);
 			if (!skill) {
-				Output::Warning("AllySelected: Item {} references invalid skill {}", item->ID, item->skill_id);
+				Output::Warning("AllySelected: Item {} references invalid skill {}", item->GetItemSave()->ID, item->GetItemSave()->skill_id);
 				return nullptr;
 			}
-			active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Skill>(active_actor, &target, *skill, item));
+			active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Skill>(active_actor, &target, *skill, item->GetItemSave()));
 		} else {
-			active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Item>(active_actor, &target, *item));
+			active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Item>(active_actor, &target, *item->GetItemSave()));
 		}
 	} else {
 		assert("Invalid previous state for ally selection" && false);
@@ -407,16 +407,16 @@ void Scene_Battle::DefendSelected() {
 }
 
 void Scene_Battle::ItemSelected() {
-	const lcf::rpg::Item* item = item_window->GetItem();
+	auto* item = item_window->GetItemU();
 
-	if (!item || !item_window->CheckEnable(item->ID)) {
+	if (!item || !item_window->CheckEnableU(item)) {
 		Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Buzzer));
 		return;
 	}
 
 	Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Decision));
 
-	switch (item->type) {
+	switch (item->GetItemSave()->type) {
 		case lcf::rpg::Item::Type_normal:
 		case lcf::rpg::Item::Type_book:
 		case lcf::rpg::Item::Type_material:
@@ -428,17 +428,17 @@ void Scene_Battle::ItemSelected() {
 		case lcf::rpg::Item::Type_helmet:
 		case lcf::rpg::Item::Type_accessory:
 		case lcf::rpg::Item::Type_special: {
-			const lcf::rpg::Skill* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->skill_id);
+			const lcf::rpg::Skill* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->GetItemSave()->skill_id);
 			if (!skill) {
-				Output::Warning("ItemSelected: Item {} references invalid skill {}", item->ID, item->skill_id);
+				Output::Warning("ItemSelected: Item {} references invalid skill {}", item->GetItemSave()->ID, item->GetItemSave()->skill_id);
 				return;
 			}
-			AssignSkill(skill, item);
+			AssignSkill(skill, item->GetItemSave());
 			break;
 		}
 		case lcf::rpg::Item::Type_medicine:
-			if (item->entire_party) {
-				active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Item>(active_actor, Main_Data::game_party.get(), *item_window->GetItem()));
+			if (item->GetItemSave()->entire_party) {
+				active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Item>(active_actor, Main_Data::game_party.get(), *item_window->GetItemU()->GetItemSave()));
 				ActionSelectedCallback(active_actor);
 			} else {
 				SetState(State_SelectAllyTarget);
@@ -446,7 +446,7 @@ void Scene_Battle::ItemSelected() {
 			}
 			break;
 		case lcf::rpg::Item::Type_switch:
-			active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Item>(active_actor, *item_window->GetItem()));
+			active_actor->SetBattleAlgorithm(std::make_shared<Game_BattleAlgorithm::Item>(active_actor, *item_window->GetItemU()->GetItemSave()));
 			ActionSelectedCallback(active_actor);
 			break;
 	}
@@ -465,7 +465,7 @@ void Scene_Battle::SkillSelected() {
 	AssignSkill(skill, nullptr);
 }
 
-void Scene_Battle::AssignSkill(const lcf::rpg::Skill* skill, const lcf::rpg::Item* item) {
+void Scene_Battle::AssignSkill(const lcf::rpg::Skill* skill, const lcf::rpg::SaveUniqueItems* item) {
 	switch (skill->type) {
 		case lcf::rpg::Skill::Type_teleport:
 		case lcf::rpg::Skill::Type_escape:

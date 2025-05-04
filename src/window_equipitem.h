@@ -34,7 +34,8 @@ public:
 		shield,
 		armor,
 		helmet,
-		other
+		other,
+		equipment
 	};
 
 	/**
@@ -52,6 +53,7 @@ public:
 	 * @param item_id item to check.
 	 */
 	bool CheckInclude(int item_id) override;
+	bool CheckInclude(Game_Item* item) override;
 
 	/**
 	 * Chechs if item should be enabled. Always true.
@@ -59,6 +61,7 @@ public:
 	 * @param item_id item to check.
 	 */
 	bool CheckEnable(int item_id) override;
+	bool CheckEnableU(Game_Item* item) override;
 
 private:
 	int actor_id;

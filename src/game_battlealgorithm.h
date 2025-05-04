@@ -381,7 +381,7 @@ public:
 	virtual const lcf::rpg::BattlerAnimationItemSkill* GetWeaponAnimationData() const;
 
 	/** @return the weapon data for this action (if applicable) */
-	virtual const lcf::rpg::Item* GetWeaponData() const;
+	virtual const lcf::rpg::SaveUniqueItems* GetWeaponData() const;
 
 	/**
 	 * Gets the sound effect that is played when the action is starting.
@@ -642,7 +642,7 @@ public:
 	int GetCBAMovement() const override;
 	int GetCBAAfterimage() const override;
 	const lcf::rpg::BattlerAnimationItemSkill* GetWeaponAnimationData() const override;
-	const lcf::rpg::Item* GetWeaponData() const override;
+	const lcf::rpg::SaveUniqueItems* GetWeaponData() const override;
 	const lcf::rpg::Sound* GetStartSe() const override;
 	Game_Battler::Weapon GetWeapon() const;
 	void ApplyComboHitsMultiplier(int hits) override;
@@ -663,9 +663,9 @@ private:
 
 class Skill : public AlgorithmBase {
 public:
-	Skill(Game_Battler* source, Game_Battler* target, const lcf::rpg::Skill& skill, const lcf::rpg::Item* item = NULL);
-	Skill(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::Skill& skill, const lcf::rpg::Item* item = NULL);
-	Skill(Game_Battler* source, const lcf::rpg::Skill& skill, const lcf::rpg::Item* item = NULL);
+	Skill(Game_Battler* source, Game_Battler* target, const lcf::rpg::Skill& skill, const lcf::rpg::SaveUniqueItems* item = NULL);
+	Skill(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::Skill& skill, const lcf::rpg::SaveUniqueItems* item = NULL);
+	Skill(Game_Battler* source, const lcf::rpg::Skill& skill, const lcf::rpg::SaveUniqueItems* item = NULL);
 
 	bool IsTargetValid(const Game_Battler&) const override;
 	bool vExecute() override;
@@ -683,7 +683,7 @@ public:
 	bool ActionIsPossible() const override;
 
 	const lcf::rpg::Skill& GetSkill() const;
-	const lcf::rpg::Item* GetItem() const;
+	const lcf::rpg::SaveUniqueItems* GetItem() const;
 
 	// Emulates an RPG_RT bug where whenver an actor attacks an enemy, the hit rate and damage
 	// is adjusted as if the enemy were in the front row.
@@ -694,15 +694,20 @@ private:
 	std::string GetFirstStartMessage() const;
 	std::string GetSecondStartMessage() const;
 	const lcf::rpg::Skill& skill;
-	const lcf::rpg::Item* item;
+	const lcf::rpg::SaveUniqueItems* item;
 	bool treat_enemies_asif_in_front_row = false;
 };
 
 class Item : public AlgorithmBase {
 public:
-	Item(Game_Battler* source, Game_Battler* target, const lcf::rpg::Item& item);
-	Item(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::Item& item);
-	Item(Game_Battler* source, const lcf::rpg::Item& item);
+	//Item(Game_Battler* source, Game_Battler* target, const lcf::rpg::Item& item);
+	//Item(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::Item& item);
+	//Item(Game_Battler* source, const lcf::rpg::Item& item);
+
+
+	Item(Game_Battler* source, Game_Battler* target, const lcf::rpg::SaveUniqueItems& item);
+	Item(Game_Battler* source, Game_Party_Base* target, const lcf::rpg::SaveUniqueItems& item);
+	Item(Game_Battler* source, const lcf::rpg::SaveUniqueItems& item);
 
 	bool IsTargetValid(const Game_Battler&) const override;
 	bool vExecute() override;
@@ -717,7 +722,7 @@ public:
 private:
 	std::string GetFirstStartMessage() const;
 	std::string GetSecondStartMessage() const;
-	const lcf::rpg::Item& item;
+	const lcf::rpg::SaveUniqueItems& item;
 };
 
 class Defend : public AlgorithmBase {
@@ -1030,7 +1035,7 @@ inline const lcf::rpg::Skill& Game_BattleAlgorithm::Skill::GetSkill() const {
 	return skill;
 }
 
-inline const lcf::rpg::Item* Game_BattleAlgorithm::Skill::GetItem() const {
+inline const lcf::rpg::SaveUniqueItems* Game_BattleAlgorithm::Skill::GetItem() const {
 	return item;
 }
 

@@ -58,22 +58,24 @@ void Scene_Item::vUpdate() {
 		Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Cancel));
 		Scene::Pop();
 	} else if (Input::IsTriggered(Input::DECISION)) {
-		int item_id = item_window->GetItem() == NULL ? 0 : item_window->GetItem()->ID;
+		// Todo Remove =>
+		int item_id = item_window->GetItemU() == NULL ? 0 : item_window->GetItemU()->GetItemSave()->ID;
+		auto* item = item_window->GetItemU();
+		if (item == NULL) {
 
-		if (item_id > 0 && item_window->CheckEnable(item_id)) {
+		} else if (item_window->CheckEnableU(item)) {
 			// The party only has valid items
-			const lcf::rpg::Item& item = *item_window->GetItem();
 
-			if (item.type == lcf::rpg::Item::Type_switch) {
+			if (item->GetItemSave()->type == lcf::rpg::Item::Type_switch) {
 				Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Decision));
 				Main_Data::game_party->ConsumeItemUse(item_id);
-				Main_Data::game_switches->Set(item.switch_id, true);
+				Main_Data::game_switches->Set(item->GetItemSave()->switch_id, true);
 				Scene::PopUntil(Scene::Map);
 				Game_Map::SetNeedRefresh(true);
-			} else if (item.type == lcf::rpg::Item::Type_special && item.skill_id > 0) {
-				const lcf::rpg::Skill* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item.skill_id);
+			} else if (item->GetItemSave()->type == lcf::rpg::Item::Type_special && item->GetItemSave()->skill_id > 0) {
+				const lcf::rpg::Skill* skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->GetItemSave()->skill_id);
 				if (!skill) {
-					Output::Warning("Scene Item: Item references invalid skill ID {}", item.skill_id);
+					Output::Warning("Scene Item: Item references invalid skill ID {}", item->GetItemSave()->skill_id);
 					return;
 				}
 
@@ -96,12 +98,12 @@ void Scene_Item::vUpdate() {
 					Game_Map::SetNeedRefresh(true);
 				} else {
 					Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Decision));
-					Scene::Push(std::make_shared<Scene_ActorTarget>(item_id));
+					Scene::Push(std::make_shared<Scene_ActorTarget>(item, item_id));
 					item_index = item_window->GetIndex();
 				}
 			} else {
 				Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Decision));
-				Scene::Push(std::make_shared<Scene_ActorTarget>(item_id));
+				Scene::Push(std::make_shared<Scene_ActorTarget>(item, item_id));
 				item_index = item_window->GetIndex();
 			}
 		} else {
@@ -111,10 +113,13 @@ void Scene_Item::vUpdate() {
 }
 
 void Scene_Item::TransitionOut(Scene::SceneType next_scene) {
-	const auto* item = item_window->GetItem();
+	auto item = item_window->GetItemU();
+	if (item == NULL) {
+		return;
+	}
 	const lcf::rpg::Skill* skill = nullptr;
-	if (item && item->type == lcf::rpg::Item::Type_special && item->skill_id > 0) {
-		skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->skill_id);
+	if (item->GetItemSave()->type == lcf::rpg::Item::Type_special && item->GetItemSave()->skill_id > 0) {
+		skill = lcf::ReaderUtil::GetElement(lcf::Data::skills, item->GetItemSave()->skill_id);
 	}
 
 	if (next_scene == Map && skill && skill->type == lcf::rpg::Skill::Type_escape) {

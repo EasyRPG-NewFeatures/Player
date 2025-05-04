@@ -103,6 +103,10 @@ Game_Windows::Window_User* Game_Windows::GetWindowPtr(int id) {
 		? &windows[id - 1] : nullptr;
 }
 
+void Game_Windows::Window_User::Reset(Window_Selectable* w) {
+	window.reset(w);
+}
+
 bool Game_Windows::Window_User::Create(const WindowParams& params) {
 	Erase();
 

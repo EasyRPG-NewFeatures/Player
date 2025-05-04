@@ -25,6 +25,8 @@
 #include "bitmap.h"
 #include "font.h"
 #include "player.h"
+#include <game_message.h>
+#include <output.h>
 
 Window_Base::Window_Base(int x, int y, int width, int height, Drawable::Flags flags)
 	: Window(flags)
@@ -278,6 +280,101 @@ void Window_Base::DrawItemName(const lcf::rpg::Item& item, int cx, int cy, bool 
 	int color = enabled ? Font::ColorDefault : Font::ColorDisabled;
 
 	contents->TextDraw(cx, cy, color, item.name);
+}
+
+void Window_Base::DrawItemName(lcf::rpg::SaveUniqueItems* item, int cx, int cy, bool enabled) const {
+
+	if (item->ID > 0)
+		if (!enabled) {
+			contents->TextDraw(cx, cy, Font::ColorDisabled, item->name);
+		}
+		else {
+			DrawText(cx, cy, item->name.data());
+		}
+}
+
+void Window_Base::DrawText(int cx, int cy, std::string texts) const {
+
+	std::vector<PendingMessage> messages;
+	std::stringstream ss(texts);
+	std::string out;
+	PendingMessage pm(PendingMessage::DefaultCommandInserter);
+	while (Utils::ReadLine(ss, out)) {
+		pm.PushLine(out);
+	}
+	messages.emplace_back(pm);
+
+	FontRef font = Font::Default();
+
+	BitmapRef system;
+	if (Main_Data::game_system->GetSystemName() != "") {
+		system = Cache::System(Main_Data::game_system->GetSystemName());
+	}
+	else {
+		system = Cache::SystemOrBlack();
+	}
+	
+
+	for (size_t i = 0; i < 1; ++i) {
+		const auto& pm = messages[i];
+		const auto& text = texts;
+
+		int x = cx;
+		int y = cy;
+		int text_color = 0;
+		for (const auto& line : pm.GetLines()) {
+			std::u32string line32;
+			auto* text_index = line.data();
+			const auto* end = line.data() + line.size();
+
+			while (text_index != end) {
+				auto tret = Utils::TextNext(text_index, end, Player::escape_char);
+				text_index = tret.next;
+
+				const auto ch = tret.ch;
+
+				if (Utils::IsControlCharacter(ch)) {
+					// control characters not handled
+					continue;
+				}
+
+				if (tret.is_exfont) {
+					// exfont processed later
+					line32 += '$';
+				}
+
+				if (tret.is_escape && ch != Player::escape_char) {
+					if (!line32.empty()) {
+						x += Text::Draw(*GetContents(), x, y, *font, *system, text_color, Utils::EncodeUTF(line32)).x;
+						line32.clear();
+					}
+
+					// Special message codes
+					switch (ch) {
+					case 'c':
+					case 'C':
+					{
+						// Color
+						auto pres = Game_Message::ParseColor(text_index, end, Player::escape_char, true);
+						auto value = pres.value;
+						text_index = pres.next;
+						text_color = value > 19 ? 0 : value;
+					}
+					break;
+					}
+					continue;
+				}
+
+				line32 += static_cast<char32_t>(ch);
+			}
+
+			if (!line32.empty()) {
+				Text::Draw(*GetContents(), x, y, *font, *system, text_color, Utils::EncodeUTF(line32));
+			}
+
+			x = cx;
+		}
+	}
 }
 
 void Window_Base::DrawSkillName(const lcf::rpg::Skill& skill, int cx, int cy, bool enabled) const {
