@@ -437,28 +437,14 @@ int Game_Actor::SetEquipment(int equip_type, int new_item_id) {
 }
 
 void Game_Actor::ChangeEquipment(int equip_type, int item_id) {
-	if (item_id != 0 && !IsItemUsable(item_id)) {
+	if (item_id == 0) {
+		lcf::rpg::SaveUniqueItems* item = new lcf::rpg::SaveUniqueItems;
+		ChangeEquipment(equip_type, item);
 		return;
 	}
+	Game_Item* new_item = new Game_Item(item_id);
+	ChangeEquipment(equip_type, new_item->GetItemSave());
 
-	int prev_item = SetEquipment(equip_type, item_id);
-
-	if (prev_item != 0) {
-		Main_Data::game_party->AddItem(prev_item, 1);
-	}
-	if (item_id != 0) {
-		Main_Data::game_party->RemoveItem(item_id, 1);
-	}
-
-	// In case you have a two_handed weapon equipped, the other weapon is removed.
-	const lcf::rpg::Item* item = GetWeapon();
-	const lcf::rpg::Item* item2 = Get2ndWeapon();
-	if (item2 == nullptr) {
-		item2 = GetShield();
-	}
-	if (item && item2 && ((item->type == lcf::rpg::Item::Type_weapon && item->two_handed) || (item2->type == lcf::rpg::Item::Type_weapon && item2->two_handed))) {
-		ChangeEquipment(equip_type == lcf::rpg::Item::Type_weapon ? equip_type + 1 : equip_type - 1, 0);
-	}
 }
 
 void Game_Actor::ChangeEquipment(int equip_type, lcf::rpg::SaveUniqueItems* new_item) {
@@ -848,14 +834,14 @@ int Game_Actor::GetStateProbability(int state_id) const {
 	}
 
 	// This takes the armor of the character with the most resistance for that particular state
-	for (const auto equipment : GetWholeEquipment()) {
-		lcf::rpg::Item* item = lcf::ReaderUtil::GetElement(lcf::Data::items, equipment);
-		if (item != nullptr
-				&& !(Player::IsRPG2k3() && item->reverse_state_effect)
-				&& (item->type == lcf::rpg::Item::Type_shield || item->type == lcf::rpg::Item::Type_armor
-			|| item->type == lcf::rpg::Item::Type_helmet || item->type == lcf::rpg::Item::Type_accessory)
-			&& state_id  <= static_cast<int>(item->state_set.size()) && item->state_set[state_id - 1]) {
-			mul = std::min<int>(mul, 100 - item->state_chance);
+	for (const auto item : GetWholeEquipmentU()) {
+		//lcf::rpg::Item* item = lcf::ReaderUtil::GetElement(lcf::Data::items, equipment);
+		if (item.ID != 0
+				&& !(Player::IsRPG2k3() && item.reverse_state_effect)
+				&& (item.type == lcf::rpg::Item::Type_shield || item.type == lcf::rpg::Item::Type_armor
+			|| item.type == lcf::rpg::Item::Type_helmet || item.type == lcf::rpg::Item::Type_accessory)
+			&& state_id  <= static_cast<int>(item.state_set.size()) && item.state_set[state_id - 1]) {
+			mul = std::min<int>(mul, 100 - item.state_chance);
 		}
 	}
 
@@ -872,7 +858,7 @@ int Game_Actor::GetBaseAttributeRate(int attribute_id) const {
 	}
 
 	bool boost = false;
-	ForEachEquipment<false,true>(GetWholeEquipment(), [&](auto& item) {
+	ForEachEquipmentU<false,true>(GetWholeEquipmentU(), [&](auto& item) {
 			boost |= attribute_id >= 1 && attribute_id <= static_cast<int>(item.attribute_set.size()) && item.attribute_set[attribute_id - 1];
 			});
 	rate += boost;
@@ -885,27 +871,32 @@ bool Game_Actor::IsImmuneToAttributeDownshifts() const {
 }
 
 int Game_Actor::GetWeaponId() const {
-	int item_id = GetWholeEquipment()[0];
+	auto item = GetWholeEquipmentU()[0];
+	int item_id = item.ID;
 	return item_id <= (int)lcf::Data::items.size() ? item_id : 0;
 }
 
 int Game_Actor::GetShieldId() const {
-	int item_id = GetWholeEquipment()[1];
+	auto item = GetWholeEquipmentU()[1];
+	int item_id = item.ID;
 	return item_id <= (int)lcf::Data::items.size() ? item_id : 0;
 }
 
 int Game_Actor::GetArmorId() const {
-	int item_id = GetWholeEquipment()[2];
+	auto item = GetWholeEquipmentU()[2];
+	int item_id = item.ID;
 	return item_id <= (int)lcf::Data::items.size() ? item_id : 0;
 }
 
 int Game_Actor::GetHelmetId() const {
-	int item_id = GetWholeEquipment()[3];
+	auto item = GetWholeEquipmentU()[3];
+	int item_id = item.ID;
 	return item_id <= (int)lcf::Data::items.size() ? item_id : 0;
 }
 
 int Game_Actor::GetAccessoryId() const {
-	int item_id = GetWholeEquipment()[4];
+	auto item = GetWholeEquipmentU()[4];
+	int item_id = item.ID;
 	return item_id <= (int)lcf::Data::items.size() ? item_id : 0;
 }
 

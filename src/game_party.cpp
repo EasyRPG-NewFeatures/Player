@@ -285,7 +285,10 @@ void Game_Party::AddItem(int item_id, int amount) {
 	}
 
 	Game_Item* item = new Game_Item(item_id);
-	AddItem(item->GetItemSave(), amount);
+	if (amount < 0) {
+		item->GetItemSave()->uniqueID = -1;
+	}
+	AddItem(item, amount);
 }
 
 void Game_Party::RemoveItem(int item_id, int amount) {
@@ -298,6 +301,7 @@ void Game_Party::RemoveItem(lcf::rpg::SaveUniqueItems* new_item, int amount) {
 void Game_Party::ConsumeItemUse(int item_id) {
 
 	Game_Item* i = new Game_Item(item_id);
+	i->GetItemSave()->uniqueID = -1;
 	ConsumeItemUse(i);
 
 	return;

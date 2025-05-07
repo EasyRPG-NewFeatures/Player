@@ -25,10 +25,16 @@
 #include <lcf/reader_util.h>
 #include "game_battle.h"
 #include "output.h"
+#include "game_strings.h"
 
-Window_Item::Window_Item(int ix, int iy, int iwidth, int iheight) :
+Window_Item::Window_Item(int ix, int iy, int iwidth, int iheight, int equipped_varID) :
 	Window_Selectable(ix, iy, iwidth, iheight) {
 	column_max = 2;
+
+	equipped_varValue = "";
+	if (equipped_varID > 0) {
+		equipped_varValue = Main_Data::game_strings->Get(equipped_varID).data();
+	}
 }
 
 const lcf::rpg::Item* Window_Item::GetItem() const {
@@ -102,6 +108,18 @@ void Window_Item::Refresh() {
 			}
 		}
 	}
+	if (equipped_varValue != "")
+		for (auto actor : Main_Data::game_party->GetActors()) {
+			for (int i = 0;i < actor->GetWholeEquipmentU().size();i++) {
+				auto item = actor->GetWholeEquipmentU()[i];
+				if (item.ID != 0) {
+					Game_Item* g_i = new Game_Item(0);
+					g_i->Link(item, actor->GetId(), i);
+					g_i->SetEquipped(true);
+					items.push_back(g_i);
+				}
+			}
+		}
 
 	if (false) {
 		Main_Data::game_party->GetItems(party_items);
@@ -163,7 +181,10 @@ void Window_Item::DrawItem(int index) {
 		DrawItemName(items[index]->GetItemSave(), rect.x, rect.y, enabled);
 
 		Font::SystemColor color = enabled ? Font::ColorDefault : Font::ColorDisabled;
-		contents->TextDraw(rect.x + rect.width - 24, rect.y, color, fmt::format("{}{:3d}", lcf::rpg::Terms::TermOrDefault(lcf::Data::terms.easyrpg_item_number_separator, ":"), number));
+		if (item->IsEquipped()) {
+			contents->TextDraw(rect.x + rect.width - 24, rect.y, color, equipped_varValue);
+		} else
+			contents->TextDraw(rect.x + rect.width - 24, rect.y, color, fmt::format("{}{:3d}", lcf::rpg::Terms::TermOrDefault(lcf::Data::terms.easyrpg_item_number_separator, ":"), number));
 	}
 }
 

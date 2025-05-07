@@ -3,6 +3,7 @@
 #include <game_item.h>
 #include <lcf/data.h>
 #include <lcf/reader_util.h>
+#include <regex>
 
 
 
@@ -12,81 +13,6 @@ std::unordered_map<int, int> Game_Item::idCounters;      // Compteurs des IDs
 
 Game_Item::Game_Item(lcf::rpg::SaveUniqueItems* item) {
 	itemSave = new lcf::rpg::SaveUniqueItems;
-
-	itemSave->ID = item->ID;
-	itemSave->name = item->name;
-	itemSave->description = item->description;
-	itemSave->type = item->type;
-	itemSave->price = item->price;
-	itemSave->uses = item->uses;
-	itemSave->atk_points1 = item->atk_points1;
-	itemSave->def_points1 = item->def_points1;
-	itemSave->spi_points1 = item->spi_points1;
-	itemSave->agi_points1 = item->agi_points1;
-	itemSave->two_handed = item->two_handed;
-	itemSave->sp_cost = item->sp_cost;
-	itemSave->hit = item->hit;
-	itemSave->critical_hit = item->critical_hit;
-	itemSave->animation_id = item->animation_id;
-	itemSave->preemptive = item->preemptive;
-	itemSave->dual_attack = item->dual_attack;
-	itemSave->attack_all = item->attack_all;
-	itemSave->ignore_evasion = item->ignore_evasion;
-	itemSave->prevent_critical = item->prevent_critical;
-	itemSave->raise_evasion = item->raise_evasion;
-	itemSave->half_sp_cost = item->half_sp_cost;
-	itemSave->no_terrain_damage = item->no_terrain_damage;
-	itemSave->cursed = item->cursed;
-	itemSave->entire_party = item->entire_party;
-	itemSave->recover_hp_rate = item->recover_hp_rate;
-	itemSave->recover_hp = item->recover_hp;
-	itemSave->recover_sp_rate = item->recover_sp_rate;
-	itemSave->recover_sp = item->recover_sp;
-	itemSave->occasion_field1 = item->occasion_field1;
-	itemSave->ko_only = item->ko_only;
-	itemSave->max_hp_points = item->max_hp_points;
-	itemSave->max_sp_points = item->max_sp_points;
-	itemSave->atk_points2 = item->atk_points2;
-	itemSave->def_points2 = item->def_points2;
-	itemSave->spi_points2 = item->spi_points2;
-	itemSave->agi_points2 = item->agi_points2;
-	itemSave->using_message = item->using_message;
-	itemSave->skill_id = item->skill_id;
-	itemSave->switch_id = item->switch_id;
-	itemSave->occasion_field2 = item->occasion_field2;
-	itemSave->occasion_battle = item->occasion_battle;
-	//itemSave->actor_set = item->actor_set;
-	//itemSave->state_set = item->state_set;
-	//itemSave->attribute_set = item->attribute_set;
-	itemSave->state_chance = item->state_chance;
-	itemSave->reverse_state_effect = item->reverse_state_effect;
-	itemSave->weapon_animation = item->weapon_animation;
-	itemSave->use_skill = item->use_skill;
-	itemSave->class_set = item->class_set;
-	itemSave->ranged_trajectory = item->ranged_trajectory;
-	itemSave->ranged_target = item->ranged_target;
-	itemSave->easyrpg_using_message = item->easyrpg_using_message;
-	itemSave->easyrpg_max_count = item->easyrpg_max_count;
-	itemSave->quantity = item->quantity;
-	itemSave->force_unique = item->force_unique;
-
-	itemSave->number_of_upgrade = 0;
-
-	if (idCounters.find(item->ID) == idCounters.end()) {
-		idCounters[item->ID] = 1;
-	}
-	NextUID(IsUnique());
-	idToUniqueIDMap[item->ID] = item->uniqueID + 1;
-	idCounters[item->ID] = item->uniqueID + 1;
-	uniqueID = item->uniqueID;
-}
-
-Game_Item::Game_Item(int i) {
-	item = lcf::ReaderUtil::GetElement(lcf::Data::items, i);
-	if (!item)
-		return;
-
-	itemSave = new lcf::rpg::SaveUniqueItems();
 
 	itemSave->ID = item->ID;
 	itemSave->name = item->name;
@@ -142,15 +68,105 @@ Game_Item::Game_Item(int i) {
 	itemSave->ranged_target = item->ranged_target;
 	itemSave->easyrpg_using_message = item->easyrpg_using_message;
 	itemSave->easyrpg_max_count = item->easyrpg_max_count;
-	
+	itemSave->number_of_use = item->number_of_use;
+	itemSave->quantity = item->quantity;
+	itemSave->uniqueID = item->uniqueID;
+	itemSave->force_unique = item->force_unique;
+	itemSave->number_of_upgrade = item->number_of_upgrade;
+
+	if (item->uniqueID == 0) {
+		if (idCounters.find(item->ID) == idCounters.end()) {
+			idCounters[item->ID] = 1;
+		}
+		NextUID(IsUnique());
+		idToUniqueIDMap[item->ID] = item->uniqueID + 1;
+		idCounters[item->ID] = item->uniqueID + 1;
+		uniqueID = item->uniqueID;
+	}
+	else {
+		idToUniqueIDMap[item->ID] = item->uniqueID;
+		idCounters[item->ID] = item->uniqueID;
+		uniqueID = item->uniqueID;
+	}
+}
+
+Game_Item::Game_Item(int i) {
+
+	itemSave = new lcf::rpg::SaveUniqueItems();
+
+	item = lcf::ReaderUtil::GetElement(lcf::Data::items, i);
+	if (!item)
+		return;
+
+	itemSave->ID = item->ID;
+	itemSave->name = item->name;
+	itemSave->description = item->description;
+	itemSave->type = item->type;
+	itemSave->price = item->price;
+	itemSave->uses = item->uses;
+	itemSave->atk_points1 = item->atk_points1;
+	itemSave->def_points1 = item->def_points1;
+	itemSave->spi_points1 = item->spi_points1;
+	itemSave->agi_points1 = item->agi_points1;
+	itemSave->two_handed = item->two_handed;
+	itemSave->sp_cost = item->sp_cost;
+	itemSave->hit = item->hit;
+	itemSave->critical_hit = item->critical_hit;
+	itemSave->animation_id = item->animation_id;
+	itemSave->preemptive = item->preemptive;
+	itemSave->dual_attack = item->dual_attack;
+	itemSave->attack_all = item->attack_all;
+	itemSave->ignore_evasion = item->ignore_evasion;
+	itemSave->prevent_critical = item->prevent_critical;
+	itemSave->raise_evasion = item->raise_evasion;
+	itemSave->half_sp_cost = item->half_sp_cost;
+	itemSave->no_terrain_damage = item->no_terrain_damage;
+	itemSave->cursed = item->cursed;
+	itemSave->entire_party = item->entire_party;
+	itemSave->recover_hp_rate = item->recover_hp_rate;
+	itemSave->recover_hp = item->recover_hp;
+	itemSave->recover_sp_rate = item->recover_sp_rate;
+	itemSave->recover_sp = item->recover_sp;
+	itemSave->occasion_field1 = item->occasion_field1;
+	itemSave->ko_only = item->ko_only;
+	itemSave->max_hp_points = item->max_hp_points;
+	itemSave->max_sp_points = item->max_sp_points;
+	itemSave->atk_points2 = item->atk_points2;
+	itemSave->def_points2 = item->def_points2;
+	itemSave->spi_points2 = item->spi_points2;
+	itemSave->agi_points2 = item->agi_points2;
+	itemSave->using_message = item->using_message;
+	itemSave->skill_id = item->skill_id;
+	itemSave->switch_id = item->switch_id;
+	itemSave->occasion_field2 = item->occasion_field2;
+	itemSave->occasion_battle = item->occasion_battle;
+	itemSave->actor_set = item->actor_set;
+	itemSave->state_set = item->state_set;
+	itemSave->attribute_set = item->attribute_set;
+	itemSave->state_chance = item->state_chance;
+	itemSave->reverse_state_effect = item->reverse_state_effect;
+	itemSave->weapon_animation = item->weapon_animation;
+	itemSave->use_skill = item->use_skill;
+	itemSave->class_set = item->class_set;
+	itemSave->ranged_trajectory = item->ranged_trajectory;
+	itemSave->ranged_target = item->ranged_target;
+	itemSave->easyrpg_using_message = item->easyrpg_using_message;
+	itemSave->easyrpg_max_count = item->easyrpg_max_count;
+
 	itemSave->number_of_upgrade = 0;
 
 	if (idCounters.find(i) == idCounters.end()) {
 		idCounters[i] = 1;
 	}
 	NextUID(IsUnique());
-	
 
+
+}
+
+void Game_Item::Link(lcf::rpg::SaveUniqueItems item, int actor_id, int slot) {
+	*itemSave = item;
+	this->actor_id = actor_id;
+	this->slot = slot;
 }
 
 void Game_Item::NextUID(bool unique) {
@@ -218,6 +234,9 @@ bool Game_Item::SameItem(Game_Item* item) const {
 		itemSave->switch_id == item->itemSave->switch_id &&
 		itemSave->occasion_field2 == item->itemSave->occasion_field2 &&
 		itemSave->occasion_battle == item->itemSave->occasion_battle &&
+		itemSave->actor_set == item->itemSave->actor_set &&
+		itemSave->state_set == item->itemSave->state_set &&
+		itemSave->attribute_set == item->itemSave->attribute_set &&
 		itemSave->state_chance == item->itemSave->state_chance &&
 		itemSave->reverse_state_effect == item->itemSave->reverse_state_effect &&
 		itemSave->weapon_animation == item->itemSave->weapon_animation &&
@@ -301,6 +320,25 @@ std::string Game_Item::ToString() {
 	r += std::to_string(itemSave->switch_id) + "\n";
 	r += (itemSave->occasion_field2 ? "true" : "false") + std::string("\n");
 	r += (itemSave->occasion_battle ? "true" : "false") + std::string("\n");
+
+	for (int i = 0;i < itemSave->actor_set.size();i++) {
+		int s = itemSave->actor_set[i];
+		r += std::to_string(s) + " ";
+	}
+	r += "\n";
+
+	for (int i = 0; i < itemSave->state_set.size(); i++) {
+		int s = itemSave->state_set[i];
+		r += std::to_string(s) + " ";
+	}
+	r += "\n";
+
+	for (int i = 0; i < itemSave->attribute_set.size(); i++) {
+		int s = itemSave->attribute_set[i];
+		r += std::to_string(s) + " ";
+	}
+	r += "\n";
+
 	r += std::to_string(itemSave->state_chance) + "\n";
 	r += (itemSave->reverse_state_effect ? "true" : "false") + std::string("\n");
 	r += std::to_string(itemSave->weapon_animation) + "\n";
@@ -313,6 +351,8 @@ std::string Game_Item::ToString() {
 	r += std::to_string(itemSave->number_of_use) + "\n";
 	r += std::to_string(itemSave->quantity) + "\n";
 	r += std::to_string(itemSave->uniqueID) + "\n";
+
+	Output::Debug(" {}", r);
 
 	return r;
 }
@@ -619,3 +659,178 @@ void Game_Item::SetOccasion_battle(const std::string&, bool value) { if (itemSav
 void Game_Item::SetReverse_state_effect(const std::string&, bool value) { if (itemSave) itemSave->reverse_state_effect = value; }
 void Game_Item::SetUse_skill(const std::string&, bool value) { if (itemSave) itemSave->use_skill = value; }
 void Game_Item::SetForce_Unique(const std::string&, bool value) { if (itemSave) itemSave->force_unique = value; }
+
+void Game_Item::SetActors_Set(const std::string& op, std::string value) {
+	if (op == "=") {
+
+		int max = 0;
+
+		std::regex patternVariable(R"((\d) *)");
+		std::sregex_iterator it_c(value.begin(), value.end(), patternVariable);
+		std::sregex_iterator end;
+		while (it_c != end) {
+			++it_c;
+			max++;
+		}
+
+		lcf::DBBitArray a = lcf::DBBitArray(max, false);
+
+		std::sregex_iterator it(value.begin(), value.end(), patternVariable);
+		int i = 0;
+
+		while (it != end) {
+			std::smatch match = *it;
+			std::string group1 = match[1];
+
+			if (group1 == "1")
+				a.set(i);
+
+			++it;
+			i++;
+		}
+
+		itemSave->actor_set = a;
+	}
+	else if (op == "-=") {
+		int id = atoi(value.c_str()) - 1;
+		if (itemSave->actor_set.size() > id)
+			itemSave->actor_set.reset(id);
+	}
+	else if (op == "+=") {
+		int id = atoi(value.c_str()) - 1;
+		if (itemSave->actor_set.size() > id)
+			itemSave->actor_set.set(id);
+		else {
+			lcf::DBBitArray a = lcf::DBBitArray(id + 1, false);
+
+			a.set(id);
+
+			for (int i = 0; i < itemSave->actor_set.size(); i++) {
+				if (itemSave->actor_set[i])
+					a.set(i);
+			}
+
+			itemSave->actor_set = a;
+		}
+	}
+}
+void Game_Item::SetStates_Set(const std::string& op, std::string value) {
+	if (op == "=") {
+
+		int max = 0;
+
+		std::regex patternVariable(R"((\d) *)");
+		std::sregex_iterator it_c(value.begin(), value.end(), patternVariable);
+		std::sregex_iterator end;
+		while (it_c != end) {
+			++it_c;
+			max++;
+		}
+
+		lcf::DBBitArray a = lcf::DBBitArray(max, false);
+
+		std::sregex_iterator it(value.begin(), value.end(), patternVariable);
+		int i = 0;
+
+		while (it != end) {
+			std::smatch match = *it;
+			std::string group1 = match[1];
+
+			if (group1 == "1")
+				a.set(i);
+
+			++it;
+			i++;
+		}
+
+		itemSave->state_set = a;
+	}
+	else if (op == "-=") {
+		int id = atoi(value.c_str()) - 1;
+		if (itemSave->state_set.size() > id)
+			itemSave->state_set.reset(id);
+	}
+	else if (op == "+=") {
+		int id = atoi(value.c_str()) - 1;
+		if (itemSave->state_set.size() > id)
+			itemSave->state_set.set(id);
+		else {
+			lcf::DBBitArray a = lcf::DBBitArray(id + 1, false);
+
+			a.set(id);
+
+			for (int i = 0; i < itemSave->state_set.size(); i++) {
+				if (itemSave->state_set[i])
+					a.set(i);
+			}
+
+			itemSave->state_set = a;
+		}
+	}
+}
+
+void Game_Item::SetAttributes_Set(const std::string& op, std::string value) {
+
+	if (op == "=") {
+
+		int max = 0;
+
+		std::regex patternVariable(R"((\d) *)");
+		std::sregex_iterator it_c(value.begin(), value.end(), patternVariable);
+		std::sregex_iterator end;
+		while (it_c != end) {
+			++it_c;
+			max++;
+		}
+
+		lcf::DBBitArray a = lcf::DBBitArray(max, false);
+
+		std::sregex_iterator it(value.begin(), value.end(), patternVariable);
+		int i = 0;
+
+		while (it != end) {
+			std::smatch match = *it;
+			std::string group1 = match[1];
+
+			if (group1 == "1")
+				a.set(i);
+
+			++it;
+			i++;
+		}
+
+		itemSave->attribute_set = a;
+	}
+	else if (op == "-=") {
+		int id = atoi(value.c_str()) - 1;
+		if (itemSave->attribute_set.size() > id)
+			itemSave->attribute_set.reset(id);
+	}
+	else if (op == "+=") {
+		int id = atoi(value.c_str()) - 1;
+		if (itemSave->attribute_set.size() > id)
+			itemSave->attribute_set.set(id);
+		else {
+			lcf::DBBitArray a = lcf::DBBitArray(id + 1, false);
+			
+			a.set(id);
+
+			for (int i = 0; i<itemSave->attribute_set.size();i++) {
+				if (itemSave->attribute_set[i])
+					a.set(i);
+			}
+
+			itemSave->attribute_set = a;
+		}
+	}
+}
+
+void Game_Item::SetEquipped(bool b)
+{
+	equipped = b;
+}
+
+bool Game_Item::IsEquipped()
+{
+	return equipped;
+}

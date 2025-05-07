@@ -14,14 +14,15 @@
 #include <ostream>
 #include <type_traits>
 #include <lcf/rpg/saveuniqueitems.h>
+#include <output.h>
 
 class Game_Item
 {
-private :
+private:
 	static std::unordered_map<int, int> idToUniqueIDMap;  // Map pour associer chaque ID à un compteur unique
 	static std::unordered_map<int, int> idCounters;       // Map des compteurs par ID
 
-public :
+public:
 
 	Game_Item(int id);
 	Game_Item(lcf::rpg::SaveUniqueItems* item);
@@ -29,6 +30,7 @@ public :
 
 	void NextUID(bool unique);
 
+	void Link(lcf::rpg::SaveUniqueItems item, int actor_id, int slot);
 	int uniqueID = 0;
 
 	bool IsUnique() const;
@@ -45,12 +47,13 @@ public :
 	//	return itemSave->ID == other.itemSave->ID;
 	//}
 	bool operator==(const Game_Item& other) const {
-		if (!itemSave || !other.itemSave)
+		if (!itemSave || !other.itemSave) {
 			return false;
+		}
 		if (other.IsUnique()) {
 			return
 				itemSave->ID == other.itemSave->ID &&
-				itemSave->uniqueID == other.uniqueID &&
+				(itemSave->uniqueID == other.itemSave->uniqueID || other.itemSave->uniqueID == -1 || itemSave->uniqueID == -1) &&
 				itemSave->name == other.itemSave->name &&
 				itemSave->description == other.itemSave->description &&
 				itemSave->type == other.itemSave->type &&
@@ -92,6 +95,9 @@ public :
 				itemSave->switch_id == other.itemSave->switch_id &&
 				itemSave->occasion_field2 == other.itemSave->occasion_field2 &&
 				itemSave->occasion_battle == other.itemSave->occasion_battle &&
+				itemSave->actor_set == other.itemSave->actor_set &&
+				itemSave->state_set == other.itemSave->state_set &&
+				itemSave->attribute_set == other.itemSave->attribute_set &&
 				itemSave->state_chance == other.itemSave->state_chance &&
 				itemSave->reverse_state_effect == other.itemSave->reverse_state_effect &&
 				itemSave->weapon_animation == other.itemSave->weapon_animation &&
@@ -146,6 +152,9 @@ public :
 			itemSave->switch_id == other.itemSave->switch_id &&
 			itemSave->occasion_field2 == other.itemSave->occasion_field2 &&
 			itemSave->occasion_battle == other.itemSave->occasion_battle &&
+			itemSave->actor_set == other.itemSave->actor_set &&
+			itemSave->state_set == other.itemSave->state_set &&
+			itemSave->attribute_set == other.itemSave->attribute_set &&
 			itemSave->state_chance == other.itemSave->state_chance &&
 			itemSave->reverse_state_effect == other.itemSave->reverse_state_effect &&
 			itemSave->weapon_animation == other.itemSave->weapon_animation &&
@@ -223,10 +232,23 @@ public :
 	void SetUse_skill(const std::string& op, bool value);
 	void SetForce_Unique(const std::string& op, bool value);
 
+	// DBBitArray
+	void SetActors_Set(const std::string& op, std::string value);
+	void SetStates_Set(const std::string& op, std::string value);
+	void SetAttributes_Set(const std::string& op, std::string value);
+
+	void SetEquipped(bool b);
+	bool IsEquipped();
+
+	int actor_id = 0;
+	int slot = 0;
+
 private:
 
 	lcf::rpg::Item* item;
 	lcf::rpg::SaveUniqueItems* itemSave;
+
+	bool equipped = false;
 
 };
 

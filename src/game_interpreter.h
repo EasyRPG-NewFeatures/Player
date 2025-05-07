@@ -293,6 +293,8 @@ protected:
 	bool CommandAddUniqueItem(lcf::rpg::EventCommand const& com);
 	bool CommandGetWindowItem(lcf::rpg::EventCommand const& com);
 
+	void SetUniqueItem(std::string text, Game_Item* item);
+
 	int DecodeInt(lcf::DBArray<int32_t>::const_iterator& it);
 	const std::string DecodeString(lcf::DBArray<int32_t>::const_iterator& it);
 	lcf::rpg::MoveCommand DecodeMove(lcf::DBArray<int32_t>::const_iterator& it);

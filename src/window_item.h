@@ -32,7 +32,7 @@ public:
 	/**
 	 * Constructor.
 	 */
-	Window_Item(int ix, int iy, int iwidth, int iheight);
+	Window_Item(int ix, int iy, int iwidth, int iheight, int equipped_varID = 0);
 
 	/**
 	 * Gets item.
@@ -87,6 +87,8 @@ private:
 	std::vector<Game_Item*> items;
 
 	Game_Actor* actor = nullptr;
+
+	std::string equipped_varValue = "";
 };
 
 #endif

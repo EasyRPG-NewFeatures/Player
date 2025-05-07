@@ -680,7 +680,7 @@ bool Game_BattleAlgorithm::Normal::vExecute() {
 	if (source.GetType() == Game_Battler::Type_Ally) {
 		auto& ally = static_cast<Game_Actor&>(source);
 		const bool is2k3 = Player::IsRPG2k3();
-		auto weapons = ally.GetWeapons(weapon);
+		auto weapons = ally.GetWeaponsU(weapon);
 
 		if (weapons[0]) {
 			int num_states = 0;

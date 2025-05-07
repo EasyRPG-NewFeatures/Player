@@ -128,12 +128,12 @@ int ApplyAttributeNormalAttackMultiplier(int effect, const Game_Battler& source_
 	auto add = [&](int i) {
 		if (source_battler.GetType() == Game_Battler::Type_Ally) {
 			auto& source = static_cast<const Game_Actor&>(source_battler);
-			if (source.GetWeapon() == nullptr && source.Get2ndWeapon() == nullptr) {
+			if (source.GetWeaponU() == nullptr && source.Get2ndWeaponU() == nullptr) {
 				lcf::rpg::Actor* allydata = lcf::ReaderUtil::GetElement(lcf::Data::actors, source.GetId());
 				attribute_sets[n++] = &allydata->easyrpg_unarmed_attribute_set;
 			} else {
 				if (weapon == Game_Battler::Weapon(i + 1) || weapon == Game_Battler::WeaponAll) {
-					auto* item = source.GetEquipment(i + 1);
+					auto* item = source.GetEquipmentU(i + 1);
 					if (item && item->type == lcf::rpg::Item::Type_weapon) {
 						attribute_sets[n++] = &item->attribute_set;
 					}
