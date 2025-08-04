@@ -22,6 +22,7 @@
 #include "scene_battle.h"
 #include "async_handler.h"
 #include "window_actorsp.h"
+#include <battle_camera.h>
 
 // CBA constant
 // The CBA move frame counter is incremented twice per frame in RPG_RT,
@@ -89,6 +90,8 @@ public:
 	void vUpdate() override;
 	void OnPartyChanged(Game_Actor* actor, bool add) override;
 	void OnEventHpChanged(Game_Battler* battler, int hp) override;
+
+	Battle_Camera battleCamera;
 
 protected:
 	void Start2();
@@ -255,6 +258,9 @@ protected:
 	int GetNextReadyActor();
 
 	std::vector<int> atb_order;
+
+	float camera_speed = 16.0f;
+	float camera_zoom = 0.5f;
 };
 
 #endif

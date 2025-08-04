@@ -24,6 +24,7 @@
 #include "sprite_battler.h"
 #include "sprite_character.h"
 #include "sprite_timer.h"
+#include "cmath"
 
 class Game_Battler;
 /**
@@ -35,7 +36,13 @@ public:
 
 	void Update();
 
+	float GetCameraOffsetX();
+	float GetCameraOffsetY();
+	float GetCameraZoom();
+	void SetCameraOffset(float x, float y, float z);
+
 protected:
+
 	std::unique_ptr<Background> background;
 	std::vector<Sprite_Battler*> sprites;
 	std::string background_name;
@@ -43,6 +50,9 @@ protected:
 
 	std::unique_ptr<Sprite_Timer> timer1;
 	std::unique_ptr<Sprite_Timer> timer2;
+
+private:
+	float cameOffsetX, cameOffsetY, cameZoom;
 };
 
 #endif

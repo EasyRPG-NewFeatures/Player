@@ -30,6 +30,8 @@
 #include "output.h"
 #include "feature.h"
 #include "game_battle.h"
+#include "spriteset_battle.h"
+#include <battle_camera.h>
 
 Sprite_Actor::Sprite_Actor(Game_Actor* actor)
 	: Sprite_Battler(actor, actor->GetId())
@@ -287,12 +289,17 @@ void Sprite_Actor::Draw(Bitmap& dst) {
 	SetTone(Main_Data::game_screen->GetTone());
 	SetFlashEffect(battler->GetFlashColor());
 
+	float depth = Battle_Camera::MapDepth(GetY());
+	float cameZoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth;
+
 	int steps = static_cast<int>(256 / images.size());
 	int opacity = steps;
 	for (auto it = images.crbegin(); it != images.crend(); ++it) {
 		Sprite_Battler::SetFixedFlipX();
 		Sprite_Battler::SetX(it->x);
 		Sprite_Battler::SetY(it->y);
+		Sprite_Battler::SetZoomX(1 + cameZoom);
+		Sprite_Battler::SetZoomY(1 + cameZoom);
 		Sprite_Battler::SetOpacity(std::min(opacity, 255));
 		Sprite_Battler::Draw(dst);
 		opacity += steps;

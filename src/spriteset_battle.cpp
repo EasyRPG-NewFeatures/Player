@@ -75,3 +75,22 @@ void Spriteset_Battle::Update() {
 	background->SetTone(new_tone);
 	background->Update();
 }
+
+void Spriteset_Battle::SetCameraOffset(float x, float y, float z) {
+	cameOffsetX = x;
+	cameOffsetY = y;
+	cameZoom = z;
+}
+
+float Spriteset_Battle::GetCameraOffsetX() {
+	return cameOffsetX;
+}
+
+float Spriteset_Battle::GetCameraOffsetY() {
+	return cameOffsetY;
+}
+
+float Spriteset_Battle::GetCameraZoom() {
+	return cameZoom;
+}
+

@@ -28,6 +28,8 @@
 #include "output.h"
 #include "feature.h"
 #include "game_battle.h"
+#include "spriteset_battle.h"
+#include <battle_camera.h>
 
 Sprite_Enemy::Sprite_Enemy(Game_Enemy* enemy)
 	: Sprite_Battler(enemy, enemy->GetTroopMemberId())
@@ -117,9 +119,12 @@ void Sprite_Enemy::Draw(Bitmap& dst) {
 		alpha = 160 * alpha / 255;
 	}
 
+	float depth = Battle_Camera::MapDepth(enemy->GetDisplayY());
+	float cameZoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth;
+
 	SetOpacity(alpha);
-	SetZoomX(zoom);
-	SetZoomY(zoom);
+	SetZoomX(zoom + cameZoom);
+	SetZoomY(zoom + cameZoom);
 
 	SetTone(Main_Data::game_screen->GetTone());
 	SetX(enemy->GetDisplayX());

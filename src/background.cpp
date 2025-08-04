@@ -28,6 +28,8 @@
 #include "drawable_mgr.h"
 #include "game_screen.h"
 #include "player.h"
+#include <game_battle.h>
+#include "spriteset_battle.h"
 
 Background::Background(const std::string& name) : Drawable(Priority_Background)
 {
@@ -118,6 +120,11 @@ int Background::Scale(int x) {
 void Background::Draw(Bitmap& dst) {
 	Rect dst_rect = dst.GetRect();
 
+
+	float offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
+	float offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+	float cameZoom = Game_Battle::GetSpriteset().GetCameraZoom();
+
 	// If the background doesn't fill the screen, center it to support custom resolutions
 	BitmapRef center_bitmap = bg_bitmap ? bg_bitmap : fg_bitmap;
 	if (center_bitmap) {
@@ -131,8 +138,10 @@ void Background::Draw(Bitmap& dst) {
 		}
 	}
 
-	dst_rect.x += Main_Data::game_screen->GetShakeOffsetX();
-	dst_rect.y += Main_Data::game_screen->GetShakeOffsetY();
+	dst_rect.x += Main_Data::game_screen->GetShakeOffsetX() - offX - dst.GetWidth() / 4;
+	dst_rect.y += Main_Data::game_screen->GetShakeOffsetY() - offY - dst.GetHeight() / 4;
+	dst_rect.width  *= 1 + cameZoom;
+	dst_rect.height *= 1 + cameZoom;
 
 	if (bg_bitmap)
 		dst.TiledBlit(-Scale(bg_x), -Scale(bg_y), bg_bitmap->GetRect(), *bg_bitmap, dst_rect, 255);

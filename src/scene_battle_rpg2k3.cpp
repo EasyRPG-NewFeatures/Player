@@ -64,6 +64,8 @@ void Scene_Battle_Rpg2k3::Start() {
 	CreateEnemySprites();
 	CreateActorSprites();
 
+	battleCamera.SetPosition((float) Player::screen_width / 2, (float) Player::screen_height / 2);
+
 	// We need to wait for actor and enemy graphics to load before we can finish initializing the battle.
 	AsyncNext([this]() { Start2(); });
 }
@@ -434,9 +436,12 @@ void Scene_Battle_Rpg2k3::UpdateAnimations() {
 				int sprite_frame = frames[(frame_counter / 15) % 4];
 				ally_cursor->SetSrcRect(Rect(sprite_frame * 16, 16, 16, 16));
 
+				float offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
+				float offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+
 				ally_cursor->SetVisible(true);
-				ally_cursor->SetX(Player::menu_offset_x + actor->GetBattlePosition().x);
-				ally_cursor->SetY(Player::menu_offset_y + actor->GetBattlePosition().y - 40);
+				ally_cursor->SetX(Player::menu_offset_x + actor->GetBattlePosition().x - offX);
+				ally_cursor->SetY(Player::menu_offset_y + actor->GetBattlePosition().y - 40 - offY);
 
 				if (frame_counter % 30 == 0) {
 					SelectionFlash(actor);
@@ -463,9 +468,13 @@ void Scene_Battle_Rpg2k3::UpdateAnimations() {
 					int sprite_frame = frames[(frame_counter / 15) % 4];
 					enemy_cursor->SetSrcRect(Rect(sprite_frame * 16, 0, 16, 16));
 
+					float offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
+					float offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+
+
 					enemy_cursor->SetVisible(true);
-					enemy_cursor->SetX(Player::menu_offset_x + enemy->GetBattlePosition().x + sprite->GetWidth() / 2);
-					enemy_cursor->SetY(Player::menu_offset_y + enemy->GetBattlePosition().y);
+					enemy_cursor->SetX(Player::menu_offset_x + enemy->GetBattlePosition().x + sprite->GetWidth() / 2 - offX);
+					enemy_cursor->SetY(Player::menu_offset_y + enemy->GetBattlePosition().y - offY);
 
 					std::vector<lcf::rpg::State*> ordered_states = enemy->GetInflictedStatesOrderedByPriority();
 					if (ordered_states.size() > 0) {
@@ -509,9 +518,14 @@ void Scene_Battle_Rpg2k3::DrawFloatText(int x, int y, int color, StringView text
 	floating_text->SetBitmap(graphic);
 	floating_text->SetOx(rect.width / 2);
 	floating_text->SetOy(rect.height + 5);
-	floating_text->SetX(Player::menu_offset_x + x);
+
+	/* TODO Change this + add Zoom*/
+	float offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
+	float offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+
+	floating_text->SetX(Player::menu_offset_x + x - offX);
 	// Move 5 pixel down because the number "jumps" with the intended y as the peak
-	floating_text->SetY(Player::menu_offset_y + y + 5);
+	floating_text->SetY(Player::menu_offset_y + y + 5 - offY);
 	floating_text->SetZ(Priority_Window + y);
 
 	FloatText float_text;
@@ -964,6 +978,9 @@ void Scene_Battle_Rpg2k3::vUpdate() {
 
 	UpdateAnimations();
 	UpdateGraphics();
+
+	battleCamera.Update();
+	Game_Battle::GetSpriteset().SetCameraOffset(battleCamera.GetOffsetX(), battleCamera.GetOffsetY(), battleCamera.GetZoom());
 }
 
 void Scene_Battle_Rpg2k3::NextTurn(Game_Battler* battler) {
@@ -1152,6 +1169,9 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionFi
 	};
 
 	if (scene_action_substate == eBegin) {
+
+		battleCamera.MoveTo((float)Player::screen_width / 2, (float)Player::screen_height / 2, camera_speed, 0);
+
 		ResetWindows(true);
 		target_window->SetIndex(-1);
 
@@ -1280,6 +1300,12 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionAc
 		if (lcf::Data::battlecommands.battle_type != lcf::rpg::BattleCommands::BattleType_alternative) {
 			command_window->SetVisible(status_window->GetActive());
 		}
+
+		if (active_actor)
+			if (active_actor->GetType() == Game_Battler::Type_Ally) {
+				auto pos = active_actor->GetBattlePosition();
+				battleCamera.MoveTo(pos.x, pos.y, camera_speed, 10, camera_zoom);  // vitesse arbitraire
+			}
 	}
 
 	if (scene_action_substate == eWaitActor) {
@@ -1311,6 +1337,12 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionAc
 			}
 		}
 
+		if (active_actor)
+			if (active_actor->GetType() == Game_Battler::Type_Ally) {
+				auto pos = active_actor->GetBattlePosition();
+				battleCamera.MoveTo(pos.x, pos.y, camera_speed, 10, camera_zoom);  // vitesse arbitraire
+			}
+
 		return SceneActionReturn::eWaitTillNextFrame;
 	}
 
@@ -1331,6 +1363,12 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionAc
 				return SceneActionReturn::eWaitTillNextFrame;
 			}
 		}
+
+		if (active_actor)
+			if (active_actor->GetType() == Game_Battler::Type_Ally) {
+				auto pos = active_actor->GetBattlePosition();
+				battleCamera.MoveTo(pos.x, pos.y, camera_speed, 10, camera_zoom);  // vitesse arbitraire
+			}
 
 		return SceneActionReturn::eWaitTillNextFrame;
 	}
@@ -1459,6 +1497,13 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionCo
 				return SceneActionReturn::eWaitTillNextFrame;
 			}
 		}
+
+		if (active_actor)
+			if (active_actor->GetType() == Game_Battler::Type_Ally) {
+				auto pos = active_actor->GetBattlePosition();
+				battleCamera.MoveTo(pos.x, pos.y, camera_speed, 10, camera_zoom);  // vitesse arbitraire
+			}
+
 		return SceneActionReturn::eWaitTillNextFrame;
 	}
 	return SceneActionReturn::eWaitTillNextFrame;
@@ -1586,6 +1631,15 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionEn
 	}
 
 	if (scene_action_substate == eWaitInput) {
+
+		std::vector<Game_Battler*> enemies;
+		Main_Data::game_enemyparty->GetActiveBattlers(enemies);
+		Game_Enemy* target = static_cast<Game_Enemy*>(enemies[target_window->GetIndex()]);
+		if (target) {
+			auto pos = target->GetBattlePosition();
+			battleCamera.MoveTo(pos.x + 80, pos.y, camera_speed, 10, camera_zoom);
+		}
+
 		if (Input::IsTriggered(Input::DECISION)) {
 			auto* actor = active_actor;
 			// active_actor gets reset after the next call, so save it.
@@ -1637,6 +1691,11 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionAl
 	}
 
 	if (scene_action_substate == eWaitInput) {
+
+		Game_Actor& target = (*Main_Data::game_party)[status_window->GetIndex()];
+		auto pos = target.GetBattlePosition();
+		battleCamera.MoveTo(pos.x, pos.y, camera_speed, 10, camera_zoom);
+
 		if (Input::IsTriggered(Input::DECISION)) {
 			AllySelected();
 			return SceneActionReturn::eWaitTillNextFrame;
@@ -1725,6 +1784,9 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionBa
 		} else {
 			SetState(previous_state);
 		}
+
+		battleCamera.MoveTo((float)Player::screen_width / 2, (float)Player::screen_height / 2, camera_speed, 0);
+
 		return SceneActionReturn::eWaitTillNextFrame;
 	}
 
@@ -2223,6 +2285,10 @@ Scene_Battle_Rpg2k3::BattleActionReturn Scene_Battle_Rpg2k3::ProcessBattleAction
 		}
 	}
 
+	if (battle_action_wait == 0) {
+		SetWait(5, 20);
+	}
+
 	SetBattleActionState(BattleActionState_Combo);
 	return BattleActionReturn::eContinue;
 }
@@ -2306,6 +2372,15 @@ Scene_Battle_Rpg2k3::BattleActionReturn Scene_Battle_Rpg2k3::ProcessBattleAction
 Scene_Battle_Rpg2k3::BattleActionReturn Scene_Battle_Rpg2k3::ProcessBattleActionStartAnimation(Game_BattleAlgorithm::AlgorithmBase* action) {
 	auto* source = action->GetSource();
 	bool ranged_weapon = false;
+
+
+	if (action->GetTarget()) {
+		auto pos = action->GetTarget()->GetBattlePosition();
+		int dx = 0;
+		if (action->GetTarget()->GetType() == Game_Battler::Type_Enemy)
+			dx = 80;
+		battleCamera.MoveTo(pos.x + dx, pos.y, camera_speed, 20, camera_zoom);  // vitesse arbitraire
+	}
 
 	if (source->GetType() == Game_Battler::Type_Ally) {
 		auto* actor = static_cast<Game_Actor*>(source);

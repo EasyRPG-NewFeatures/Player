@@ -33,6 +33,7 @@
 #include "drawable_mgr.h"
 #include "scene_map.h"
 #include "spriteset_map.h"
+#include <battle_camera.h>
 
 BattleAnimation::BattleAnimation(const lcf::rpg::Animation& anim, bool only_sound, int cutoff) :
 	animation(anim), only_sound(only_sound)
@@ -99,6 +100,18 @@ void BattleAnimation::DrawAt(Bitmap& dst, int x, int y) {
 
 	const lcf::rpg::AnimationFrame& anim_frame = animation.frames[GetRealFrame()];
 
+	float offX = 0;
+	float offY = 0;
+	float zoom = 0;
+	if (Scene::instance->type == Scene::Battle) {
+
+		float depth = Battle_Camera::MapDepth(y);
+
+		offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
+		zoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth;
+		offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+	}
+
 	std::vector<lcf::rpg::AnimationCellData>::const_iterator it;
 	for (it = anim_frame.cells.begin(); it != anim_frame.cells.end(); ++it) {
 		const lcf::rpg::AnimationCellData& cell = *it;
@@ -109,8 +122,8 @@ void BattleAnimation::DrawAt(Bitmap& dst, int x, int y) {
 			continue;
 		}
 
-		SetX(cell.x + x);
-		SetY(cell.y + y);
+		SetX(cell.x + x - offX);
+		SetY(cell.y + y - offY);
 		int sx = cell.cell_id % 5;
 		int sy = cell.cell_id / 5;
 		int size = animation.large ? 128 : 96;
@@ -122,8 +135,8 @@ void BattleAnimation::DrawAt(Bitmap& dst, int x, int y) {
 			cell.tone_blue * 128 / 100,
 			cell.tone_gray * 128 / 100));
 		SetOpacity(255 * (100 - cell.transparency) / 100);
-		SetZoomX(cell.zoom / 100.0);
-		SetZoomY(cell.zoom / 100.0);
+		SetZoomX(cell.zoom / 100.0 + zoom);
+		SetZoomY(cell.zoom / 100.0 + zoom);
 		SetFlipX(invert);
 		Sprite::Draw(dst);
 	}
@@ -332,15 +345,19 @@ BattleAnimationBattler::BattleAnimationBattler(const lcf::rpg::Animation& anim, 
 void BattleAnimationBattler::Draw(Bitmap& dst) {
 	if (IsOnlySound())
 		return;
+
+	float offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
+	float offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+
 	if (animation.scope == lcf::rpg::Animation::Scope_screen) {
-		DrawAt(dst, Player::menu_offset_x + Player::screen_width / 2, Player::menu_offset_y + Player::screen_height / 3);
+		DrawAt(dst, Player::menu_offset_x + Player::screen_width / 2 - offX, Player::menu_offset_y + Player::screen_height / 3 - offY);
 		return;
 	}
 
 	for (auto* battler: battlers) {
 		SetFlashEffect(battler->GetFlashColor());
 		// Game_Battler::GetDisplayX() and Game_Battler::GetDisplayX() already add MENU_OFFSET
-		DrawAt(dst, battler->GetDisplayX(), battler->GetDisplayY());
+		DrawAt(dst, battler->GetDisplayX() + offX, battler->GetDisplayY() + offY);
 	}
 }
 

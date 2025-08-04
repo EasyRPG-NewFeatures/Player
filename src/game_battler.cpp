@@ -43,6 +43,7 @@
 #include "attribute.h"
 #include "algo.h"
 #include "rand.h"
+#include "spriteset_battle.h"
 
 Game_Battler::Game_Battler() {
 }
@@ -570,12 +571,14 @@ int Game_Battler::GetAgi(Weapon weapon) const {
 
 int Game_Battler::GetDisplayX() const {
 	int shake_pos = Main_Data::game_screen->GetShakeOffsetX() + shake.position;
-	return Player::menu_offset_x + ((GetBattlePosition().x + shake_pos) * MENU_WIDTH / MENU_WIDTH);
+	float offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
+	return Player::menu_offset_x + ((GetBattlePosition().x + shake_pos - offX) * MENU_WIDTH / MENU_WIDTH);
 }
 
 int Game_Battler::GetDisplayY() const {
 	int shake_pos = Main_Data::game_screen->GetShakeOffsetY();
-	return Player::menu_offset_y + ((GetBattlePosition().y + GetFlyingOffset() + shake_pos) * MENU_HEIGHT / MENU_HEIGHT);
+	float offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+	return Player::menu_offset_y + ((GetBattlePosition().y + GetFlyingOffset() + shake_pos - offY) * MENU_HEIGHT / MENU_HEIGHT);
 }
 
 Game_Party_Base& Game_Battler::GetParty() const {
