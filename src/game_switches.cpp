@@ -26,13 +26,26 @@ void Game_Switches::WarnGet(int variable_id) const {
 	--_warnings;
 }
 
-bool Game_Switches::Set(int switch_id, bool value) {
+bool Game_Switches::Set(int switch_id, bool value, int mapID, int eventID) {
 	if (EP_UNLIKELY(ShouldWarn(switch_id, switch_id))) {
 		Output::Debug("Invalid write sw[{}] = {}!", switch_id, value);
 		--_warnings;
 	}
 	if (switch_id <= 0) {
-		return false;
+		int evt_id = eventID;
+		if (eventID == 0)
+			evt_id = Game_Map::GetInterpreter().GetOriginalEventId();
+		int map_id = mapID;
+		if (mapID == 0)
+			map_id = Game_Map::GetMapId();
+
+		switch_id = -switch_id;
+
+		selfSwitches[{map_id, evt_id, switch_id}] = value;
+		//selfSwitches[map_id][evt_id][switch_id] = value;
+		Output::Debug("Set SelfSwitch {} {} {} {}", map_id, evt_id, switch_id, value);
+
+		return value;
 	}
 	auto& ss = _switches;
 	if (switch_id > static_cast<int>(ss.size())) {
@@ -56,13 +69,15 @@ void Game_Switches::SetRange(int first_id, int last_id, bool value) {
 	}
 }
 
-bool Game_Switches::Flip(int switch_id) {
+bool Game_Switches::Flip(int switch_id, int mapID, int eventID) {
 	if (EP_UNLIKELY(ShouldWarn(switch_id, switch_id))) {
 		Output::Debug("Invalid flip sw[{}]!", switch_id);
 		--_warnings;
 	}
 	if (switch_id <= 0) {
-		return false;
+		bool value = !Get(switch_id, mapID, eventID);
+		Set(switch_id, value, mapID, eventID);
+		return value;
 	}
 	auto& ss = _switches;
 	if (switch_id > static_cast<int>(ss.size())) {

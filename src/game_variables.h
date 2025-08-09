@@ -24,6 +24,7 @@
 #include "string_view.h"
 #include <cstdint>
 #include <string>
+#include "output.h"
 
 /**
  * Game_Variables class.
@@ -196,7 +197,11 @@ inline Game_Variables::Var_t Game_Variables::Get(int variable_id) const {
 	if (EP_UNLIKELY(ShouldWarn(variable_id, variable_id))) {
 		WarnGet(variable_id);
 	}
-	if (variable_id <= 0 || variable_id > static_cast<int>(_variables.size())) {
+	if (variable_id > static_cast<int>(_variables.size())) {
+		return 0;
+	}
+	if (variable_id <= 0) {
+		Output::Debug("SelfVar {}", variable_id);
 		return 0;
 	}
 	return _variables[variable_id - 1];

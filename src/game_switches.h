@@ -24,6 +24,11 @@
 #include <lcf/data.h>
 #include "compiler.h"
 #include "string_view.h"
+#include "output.h"
+#include <map>
+#include <tuple>
+#include <game_map.h>
+#include <translation.h>
 
 /**
  * Game_Switches class
@@ -31,6 +36,8 @@
 class Game_Switches {
 public:
 	using Switches_t = std::vector<bool>;
+	using SelfSwitch_t = std::map<std::tuple<int, int, int>, bool>;
+
 	static constexpr int kMaxWarnings = 10;
 
 	Game_Switches() = default;
@@ -40,13 +47,13 @@ public:
 
 	void SetLowerLimit(size_t limit);
 
-	bool Get(int switch_id) const;
+	bool Get(int switch_id, int mapID = 0, int eventID = 0) const;
 	int GetInt(int switch_id) const;
 
-	bool Set(int switch_id, bool value);
+	bool Set(int switch_id, bool value, int mapID = 0, int eventID = 0);
 	void SetRange(int first_id, int last_id, bool value);
 
-	bool Flip(int switch_id);
+	bool Flip(int switch_id, int mapID = 0, int eventID = 0);
 	void FlipRange(int first_id, int last_id);
 
 	std::string_view GetName(int switch_id) const;
@@ -65,6 +72,10 @@ private:
 	Switches_t _switches;
 	size_t lower_limit = 0;
 	mutable int _warnings = kMaxWarnings;
+
+	SelfSwitch_t selfSwitches;
+	//std::vector<std::vector<std::vector<bool>>> selfSwitches;
+
 };
 
 
@@ -89,19 +100,40 @@ inline int Game_Switches::GetSizeWithLimit() const {
 }
 
 inline bool Game_Switches::IsValid(int variable_id) const {
-	return variable_id > 0 && variable_id <= GetSizeWithLimit();
+	//return (variable_id > 0) && variable_id <= GetSizeWithLimit();
+	return variable_id <= GetSizeWithLimit();
 }
 
 inline bool Game_Switches::ShouldWarn(int first_id, int last_id) const {
-	return (first_id <= 0 || last_id > GetSizeWithLimit()) && (_warnings > 0);
+	return (last_id > GetSizeWithLimit()) && (_warnings > 0);
 }
 
-inline bool Game_Switches::Get(int switch_id) const {
+inline bool Game_Switches::Get(int switch_id, int mapID, int eventID) const {
 	if (EP_UNLIKELY(ShouldWarn(switch_id, switch_id))) {
 		WarnGet(switch_id);
 	}
-	if (switch_id <= 0 || switch_id > static_cast<int>(_switches.size())) {
+	if (switch_id > static_cast<int>(_switches.size())) {
 		return false;
+	}
+	if (switch_id <= 0) {
+		int evt_id = eventID;
+		if (eventID == 0)
+			evt_id = Game_Map::GetInterpreter().GetOriginalEventId();
+		int map_id = mapID;
+		if (mapID == 0)
+			map_id = Game_Map::GetMapId();
+
+		switch_id = -switch_id;
+
+		bool value = false;
+
+		//value = selfSwitches[map_id][evt_id][switch_id];
+		auto it = selfSwitches.find({ map_id, evt_id, switch_id });
+		if (it != selfSwitches.end()) {
+			value = it->second;
+		}
+		Output::Debug("Get SelfSwitch {} {} {} {}", map_id, evt_id, switch_id, value);
+		return value;
 	}
 	return _switches[switch_id - 1];
 }
