@@ -325,6 +325,9 @@ namespace Player {
 	/** The height of the screen */
 	extern int screen_height;
 
+	/** Custom camera system ( 0 None, 1 Translation, 2 Test, 3 Mode 7 */
+	extern int battle_camera_type;
+
 	/** The X offset used to center UI in custom resolutions */
 	extern int menu_offset_x;
 

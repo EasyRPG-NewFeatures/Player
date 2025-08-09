@@ -83,6 +83,7 @@
 #include "baseui.h"
 #include "game_clock.h"
 #include "message_overlay.h"
+//#include "battle_camera.h"
 
 #ifdef __ANDROID__
 #include "platform/android/android.h"
@@ -106,6 +107,7 @@ namespace Player {
 	int menu_offset_y = (screen_height - MENU_HEIGHT) / 2;
 	int message_box_offset_x = (screen_width - MENU_WIDTH) / 2;
 	bool has_custom_resolution = false;
+	int battle_camera_type = 0;
 
 	bool exit_flag;
 	bool reset_flag;
@@ -725,6 +727,7 @@ void Player::CreateGameObjects() {
 					Player::screen_height = ini.GetInteger("RPG_RT", "WinH", SCREEN_TARGET_HEIGHT);
 					Player::has_custom_resolution = true;
 				}
+				Player::battle_camera_type = ini.GetInteger("RPG_RT", "BattleCamera", 0);
 			}
 		}
 	}

@@ -23,6 +23,7 @@
 #include "async_handler.h"
 #include "window_actorsp.h"
 #include <battle_camera.h>
+#include "battle_sprite.h"
 
 // CBA constant
 // The CBA move frame counter is incremented twice per frame in RPG_RT,
@@ -214,10 +215,10 @@ protected:
 	std::vector<std::string> GetBattleCommandNames(const Game_Actor* actor);
 	void SetBattleCommandsDisable(Window_Command& window, const Game_Actor* actor);
 
-	std::unique_ptr<Sprite> ally_cursor, enemy_cursor;
+	std::unique_ptr<Battle_Sprite> ally_cursor, enemy_cursor;
 
 	struct FloatText {
-		std::shared_ptr<Sprite> sprite;
+		std::shared_ptr<Battle_Sprite> sprite;
 		int remaining_time = 30;
 	};
 
@@ -259,7 +260,7 @@ protected:
 
 	std::vector<int> atb_order;
 
-	float camera_speed = 16.0f;
+	float camera_speed = 8.0f;
 	float camera_zoom = 0.5f;
 };
 

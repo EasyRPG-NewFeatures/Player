@@ -30,6 +30,7 @@
 #include "sprite_battler.h"
 #include "sprite_actor.h"
 #include "sprite_enemy.h"
+#include "battle_camera.h"
 
 Spriteset_Battle::Spriteset_Battle(const std::string bg_name, int terrain_id)
 {
@@ -76,21 +77,114 @@ void Spriteset_Battle::Update() {
 	background->Update();
 }
 
-void Spriteset_Battle::SetCameraOffset(float x, float y, float z) {
+void Spriteset_Battle::SetCameraOffset(float x, float y, float z, int a) {
 	cameOffsetX = x;
 	cameOffsetY = y;
 	cameZoom = z;
+	angle = a;
 }
 
-float Spriteset_Battle::GetCameraOffsetX() {
+float Spriteset_Battle::GetCameraOffsetX(int y, int x) {
+	if (Battle_Camera::GetCameraType() == 43) {
+		int x_offset = -cameOffsetX;
+		int y_offset = -cameOffsetY;
+
+		int originalX = Player::screen_width - x;
+		int originalY = Player::screen_height - y;
+		int originalYOff = Player::screen_height - y;
+		int originalOX = x_offset;
+		int originalOY = y_offset + (originalYOff - originalY);
+		// Get map properties.
+		const int center_x = Game_Battle::GetSpriteset().GetCameraCenterX();
+		const int center_y = Game_Battle::GetSpriteset().GetCameraCenterY();
+		int yaw = Game_Battle::GetSpriteset().GetCameraAngle(); // 180:
+		int slant = 60;
+		int horizon = 20;
+		int baseline = center_y + 4;
+		double scale = 200;
+		// Rotate.
+		double angle = (yaw * (2 * M_PI) / 360);
+		int xx = originalX - center_x;
+		int yy = originalY - center_y;
+		double cosA = cos(-angle);
+		double sinA = sin(-angle);
+		int rotatedX = (cosA * xx) + (sinA * yy);
+		int rotatedY = (cosA * yy) - (sinA * xx);
+		// Transform
+		double iConst = 1 + (slant / (baseline + horizon));
+		double distanceBase = slant * scale / (baseline + horizon);
+		double syBase = distanceBase * 2;
+		double distance = (syBase - rotatedY) / 2;
+		double zoom = (iConst - (distance / scale)) * 2.0;
+		zoom = 1;
+		int sy = ((slant * scale) / distance) - horizon - 120 - 4;
+		int sx = rotatedX * zoom;
+		return sx;
+	}
 	return cameOffsetX;
 }
 
-float Spriteset_Battle::GetCameraOffsetY() {
+float Spriteset_Battle::GetCameraOffsetY(int y, int x) {
+	if (Battle_Camera::GetCameraType() == 43) {
+		int x_offset = -cameOffsetX;
+		int y_offset = -cameOffsetY;
+
+		int originalX = 416 - x;
+		int originalY = 240 - y;
+		int originalYOff = 240 - y;
+		int originalOX = x_offset;
+		int originalOY = y_offset + (originalYOff - originalY);
+		// Get map properties.
+		const int center_x = Game_Battle::GetSpriteset().GetCameraCenterX();
+		const int center_y = Game_Battle::GetSpriteset().GetCameraCenterY();
+		int yaw = Game_Battle::GetSpriteset().GetCameraAngle(); // 180:
+		int slant = 60;
+		int horizon = 20;
+		int baseline = center_y + 4;
+		double scale = 200;
+		// Rotate.
+		double angle = (yaw * (2 * M_PI) / 360);
+		int xx = originalX - center_x;
+		int yy = originalY - center_y;
+		double cosA = cos(-angle);
+		double sinA = sin(-angle);
+		int rotatedX = (cosA * xx) + (sinA * yy);
+		int rotatedY = (cosA * yy) - (sinA * xx);
+		// Transform
+		double iConst = 1 + (slant / (baseline + horizon));
+		double distanceBase = slant * scale / (baseline + horizon);
+		double syBase = distanceBase * 2;
+		double distance = (syBase - rotatedY) / 2;
+		double zoom = (iConst - (distance / scale)) * 2.0;
+		zoom = 1;
+		int sy = ((slant * scale) / distance) - horizon - 120 - 4;
+		int sx = rotatedX * zoom;
+		return sy;
+	}
 	return cameOffsetY;
 }
 
 float Spriteset_Battle::GetCameraZoom() {
 	return cameZoom;
+}
+
+float Spriteset_Battle::GetCameraCenterX() {
+	return Player::screen_width / 2;
+}
+
+float Spriteset_Battle::GetCameraCenterY() {
+	return Player::screen_height / 2;
+}
+
+float Spriteset_Battle::GetCameraAngle() {
+	return angle;
+
+	//float dx = GetCameraCenterX() - GetCameraOffsetX();
+	//float dy = GetCameraCenterY() - GetCameraOffsetY();
+
+	////float dx = GetCameraOffsetX() - GetCameraCenterX();
+	////float dy = GetCameraOffsetY() - GetCameraCenterY();
+
+	//return std::atan2(dy, dx) - (75 * M_PI / 180);
 }
 

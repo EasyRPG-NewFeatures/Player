@@ -119,8 +119,50 @@ void Sprite_Enemy::Draw(Bitmap& dst) {
 		alpha = 160 * alpha / 255;
 	}
 
-	float depth = Battle_Camera::MapDepth(enemy->GetDisplayY());
-	float cameZoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth;
+	int dy = 0;
+	float depth = 0.0f;
+	float cameZoom = 0.0f;
+	if (Battle_Camera::GetCameraType() == 1 || Battle_Camera::GetCameraType() == 2) {
+		depth = Battle_Camera::MapDepth(enemy->GetDisplayY());
+		cameZoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth * 0.5f;
+	}
+	else if (Battle_Camera::GetCameraType() == 3) {
+		//int x_offset = -Game_Battle::GetSpriteset().GetCameraOffsetX();
+		//int y_offset = -Game_Battle::GetSpriteset().GetCameraOffsetY();
+
+		//int originalX = 416 - GetX();
+		//int originalY = 240 - GetY();
+		//int originalYOff = 240 - GetY();
+		//int originalOX = x_offset;
+		//int originalOY = y_offset + (originalYOff - originalY);
+		//// Get map properties.
+		//const int center_x = Game_Battle::GetSpriteset().GetCameraCenterX();
+		//const int center_y = Game_Battle::GetSpriteset().GetCameraCenterY();
+		//int yaw = 180;
+		//int slant = 60;
+		//int horizon = 20;
+		//int baseline = center_y + 4;
+		//double scale = 200;
+		//// Rotate.
+		//double angle = (yaw * (2 * M_PI) / 360);
+		//int xx = originalX - center_x;
+		//int yy = originalY - center_y;
+		//double cosA = cos(-angle);
+		//double sinA = sin(-angle);
+		//int rotatedX = (cosA * xx) + (sinA * yy);
+		//int rotatedY = (cosA * yy) - (sinA * xx);
+		//// Transform
+		//double iConst = 1 + (slant / (baseline + horizon));
+		//double distanceBase = slant * scale / (baseline + horizon);
+		//double syBase = distanceBase * 2;
+		//double distance = (syBase - rotatedY) / 2;
+		//cameZoom = (iConst - (distance / scale)) * 2.0;
+
+		//dy = GetHeight() * zoom / 2;
+
+		depth = Battle_Camera::MapDepth(GetBattler()->GetOriginalPosition().y);
+		cameZoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth;
+	}
 
 	SetOpacity(alpha);
 	SetZoomX(zoom + cameZoom);
@@ -128,7 +170,7 @@ void Sprite_Enemy::Draw(Bitmap& dst) {
 
 	SetTone(Main_Data::game_screen->GetTone());
 	SetX(enemy->GetDisplayX());
-	SetY(enemy->GetDisplayY());
+	SetY(enemy->GetDisplayY() - dy);
 	SetFlashEffect(enemy->GetFlashColor());
 	if (fixed_facing != Disabled) {
 		SetFixedFlipX();

@@ -36,10 +36,15 @@ public:
 
 	void Update();
 
-	float GetCameraOffsetX();
-	float GetCameraOffsetY();
+	float GetCameraOffsetX(int x = 0, int y = 0);
+	float GetCameraOffsetY(int x = 0, int y = 0);
+
+	float GetCameraCenterX();
+	float GetCameraCenterY();
+	float GetCameraAngle();
+
 	float GetCameraZoom();
-	void SetCameraOffset(float x, float y, float z);
+	void SetCameraOffset(float x, float y, float z, int a);
 
 protected:
 
@@ -52,7 +57,8 @@ protected:
 	std::unique_ptr<Sprite_Timer> timer2;
 
 private:
-	float cameOffsetX, cameOffsetY, cameZoom;
+	float cameOffsetX = 0.0f, cameOffsetY = 0.0f, cameZoom = 0.5f;
+	int angle = 180;
 };
 
 #endif

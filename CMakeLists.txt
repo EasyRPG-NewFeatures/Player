@@ -65,6 +65,8 @@ add_library(${PROJECT_NAME} OBJECT
 	src/battle_camera.h
 	src/battle_message.cpp
 	src/battle_message.h
+	src/battle_sprite.cpp
+	src/battle_sprite.h
 	src/bitmap.cpp
 	src/bitmapfont.h
 	src/bitmapfont_glyph.h

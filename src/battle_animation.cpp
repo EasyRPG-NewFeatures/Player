@@ -105,11 +105,54 @@ void BattleAnimation::DrawAt(Bitmap& dst, int x, int y) {
 	float zoom = 0;
 	if (Scene::instance->type == Scene::Battle) {
 
-		float depth = Battle_Camera::MapDepth(y);
+		if (Battle_Camera::GetCameraType() == 1) {
+			float depth = Battle_Camera::MapDepth(y);
 
-		offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
-		zoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth;
-		offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+			offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
+			zoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth;
+			offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+		}
+		else if (Battle_Camera::GetCameraType() == 2) {
+			float depth = Battle_Camera::MapDepth(y);
+			zoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth;
+		}
+		else if (Battle_Camera::GetCameraType() == 3) {
+			//int x_offset = -Game_Battle::GetSpriteset().GetCameraOffsetX();
+			//int y_offset = -Game_Battle::GetSpriteset().GetCameraOffsetY();
+
+			//int originalX = 416 - GetX();
+			//int originalY = 240 - GetY();
+			//int originalYOff = 240 - GetY();
+			//int originalOX = x_offset;
+			//int originalOY = y_offset + (originalYOff - originalY);
+			//// Get map properties.
+			//const int center_x = Game_Battle::GetSpriteset().GetCameraCenterX();
+			//const int center_y = Game_Battle::GetSpriteset().GetCameraCenterY();
+			//int yaw = 180;
+			//int slant = 60;
+			//int horizon = 20;
+			//int baseline = center_y + 4;
+			//double scale = 200;
+			//// Rotate.
+			//double angle = (yaw * (2 * M_PI) / 360);
+			//int xx = originalX - center_x;
+			//int yy = originalY - center_y;
+			//double cosA = cos(-angle);
+			//double sinA = sin(-angle);
+			//int rotatedX = (cosA * xx) + (sinA * yy);
+			//int rotatedY = (cosA * yy) - (sinA * xx);
+			//// Transform
+			//double iConst = 1 + (slant / (baseline + horizon));
+			//double distanceBase = slant * scale / (baseline + horizon);
+			//double syBase = distanceBase * 2;
+			//double distance = (syBase - rotatedY) / 2;
+			//zoom = (iConst - (distance / scale)) * 2.0;
+
+			float depth = Battle_Camera::MapDepth(y);
+			zoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth;
+			//offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
+			//offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+		}
 	}
 
 	std::vector<lcf::rpg::AnimationCellData>::const_iterator it;
@@ -321,7 +364,16 @@ void BattleAnimationBattle::Draw(Bitmap& dst) {
 				offset = CalculateOffset(animation.position, GetAnimationCellHeight() / 2);
 			}
 		}
-		DrawAt(dst, Player::menu_offset_x + battler->GetBattlePosition().x, Player::menu_offset_y + battler->GetBattlePosition().y + offset);
+
+		float offX = 0;
+		float offY = 0;
+
+		if (Battle_Camera::GetCameraType() == 1 || Battle_Camera::GetCameraType() == 2 || Battle_Camera::GetCameraType() == 3) {
+			offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
+			offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+		}
+
+		DrawAt(dst, Player::menu_offset_x + battler->GetBattlePosition().x - offX, Player::menu_offset_y + battler->GetBattlePosition().y + offset - offY);
 	}
 }
 void BattleAnimationBattle::FlashTargets(int r, int g, int b, int p) {
@@ -346,8 +398,12 @@ void BattleAnimationBattler::Draw(Bitmap& dst) {
 	if (IsOnlySound())
 		return;
 
-	float offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
-	float offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+	float offX = 0.0f;
+	float offY = 0.0f;
+	if (Battle_Camera::GetCameraType() == 1) {
+		offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
+		offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+	}
 
 	if (animation.scope == lcf::rpg::Animation::Scope_screen) {
 		DrawAt(dst, Player::menu_offset_x + Player::screen_width / 2 - offX, Player::menu_offset_y + Player::screen_height / 3 - offY);

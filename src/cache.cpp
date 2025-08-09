@@ -196,7 +196,7 @@ namespace {
 		{ "Battle2", true, 640, 640, 640, 640, DrawCheckerboard<Material::Battle2>, true, true },
 		{ "BattleCharSet", true, 144, 144, 384, 384, DrawCheckerboard<Material::Battlecharset>, true, false },
 		{ "BattleWeapon", true, 192, 192, 512, 512, DrawCheckerboard<Material::Battleweapon>, true, false },
-		{ "Frame", true, 320, 320, 240, 240, DrawCheckerboard<Material::Frame>, true, true },
+		{ "Frame", true, 320, 640, 240, 480, DrawCheckerboard<Material::Frame>, true, true },
 	};
 
 	template<Material::Type T>

@@ -289,8 +289,16 @@ void Sprite_Actor::Draw(Bitmap& dst) {
 	SetTone(Main_Data::game_screen->GetTone());
 	SetFlashEffect(battler->GetFlashColor());
 
-	float depth = Battle_Camera::MapDepth(GetY());
-	float cameZoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth;
+	float depth = 0.0f;
+	float cameZoom = 0.0f;
+	if (Battle_Camera::GetCameraType() == 1 || Battle_Camera::GetCameraType() == 2) {
+		depth = Battle_Camera::MapDepth(GetY());
+		cameZoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth;
+	}
+	else if (Battle_Camera::GetCameraType() == 3) {
+		depth = Battle_Camera::MapDepth(GetBattler()->GetOriginalPosition().y);
+		cameZoom = Game_Battle::GetSpriteset().GetCameraZoom() * depth;
+	}
 
 	int steps = static_cast<int>(256 / images.size());
 	int opacity = steps;

@@ -46,6 +46,8 @@ libeasyrpg_player_a_SOURCES = \
 	src/battle_camera.h \
 	src/battle_message.cpp \
 	src/battle_message.h \
+	src/battle_sprite.cpp \
+	src/battle_sprite.h \
 	src/bitmap.cpp \
 	src/bitmap.h \
 	src/bitmapfont.h \

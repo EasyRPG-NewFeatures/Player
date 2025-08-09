@@ -30,6 +30,7 @@
 #include "player.h"
 #include <game_battle.h>
 #include "spriteset_battle.h"
+#include <battle_camera.h>
 
 Background::Background(const std::string& name) : Drawable(Priority_Background)
 {
@@ -121,9 +122,15 @@ void Background::Draw(Bitmap& dst) {
 	Rect dst_rect = dst.GetRect();
 
 
-	float offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
-	float offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
-	float cameZoom = Game_Battle::GetSpriteset().GetCameraZoom();
+
+	float offX = 0.0f;
+	float offY = 0.0f;
+	float cameZoom = 0.0f;
+	if (Battle_Camera::GetCameraType() == 1) {
+		offX = Game_Battle::GetSpriteset().GetCameraOffsetX() + dst.GetWidth() / 4;
+		offY = Game_Battle::GetSpriteset().GetCameraOffsetY() + dst.GetHeight() / 4;
+		cameZoom = Game_Battle::GetSpriteset().GetCameraZoom();
+	}
 
 	// If the background doesn't fill the screen, center it to support custom resolutions
 	BitmapRef center_bitmap = bg_bitmap ? bg_bitmap : fg_bitmap;
@@ -138,17 +145,98 @@ void Background::Draw(Bitmap& dst) {
 		}
 	}
 
-	dst_rect.x += Main_Data::game_screen->GetShakeOffsetX() - offX - dst.GetWidth() / 4;
-	dst_rect.y += Main_Data::game_screen->GetShakeOffsetY() - offY - dst.GetHeight() / 4;
+	dst_rect.x += Main_Data::game_screen->GetShakeOffsetX() - offX;
+	dst_rect.y += Main_Data::game_screen->GetShakeOffsetY() - offY;
 	dst_rect.width  *= 1 + cameZoom;
 	dst_rect.height *= 1 + cameZoom;
 
 	if (bg_bitmap)
-		dst.TiledBlit(-Scale(bg_x), -Scale(bg_y), bg_bitmap->GetRect(), *bg_bitmap, dst_rect, 255);
+		//dst.TiledBlit(-Scale(bg_x), -Scale(bg_y), bg_bitmap->GetRect(), *bg_bitmap, dst_rect, 255);
+	{
+		if (Battle_Camera::GetCameraType() == 2) {
+			double zoom = 1.0;
+			double angle = -Game_Battle::GetSpriteset().GetCameraAngle();
+			int ox = bg_bitmap->GetWidth() / 2;
+			int oy = bg_bitmap->GetHeight() / 2;
+			dst.RotateZoomOpacityBlit(Player::screen_width / 2, Player::screen_height / 2, ox, oy, *bg_bitmap, bg_bitmap->GetRect(), angle, zoom, zoom, 255);
+		}
+		else if (Battle_Camera::GetCameraType() == 3) {
+			int dx = Game_Battle::GetSpriteset().GetCameraOffsetX();
+			int dy = Game_Battle::GetSpriteset().GetCameraOffsetY();
+			dst.TiledBlit(-Scale(bg_x) + dx, -Scale(bg_y) + dy, bg_bitmap->GetRect(), *bg_bitmap, dst_rect, 255);
+		}
+		else {
+			dst.TiledBlit(-Scale(bg_x), -Scale(bg_y), bg_bitmap->GetRect(), *bg_bitmap, dst_rect, 255);
+		}
 
-	if (fg_bitmap)
-		dst.TiledBlit(-Scale(fg_x), -Scale(fg_y), fg_bitmap->GetRect(), *fg_bitmap, dst_rect, 255);
+	}
+	
+	if (fg_bitmap) {
+		if (Battle_Camera::GetCameraType() == 3) {
 
+			int dx = Game_Battle::GetSpriteset().GetCameraOffsetX();
+			int dy = Game_Battle::GetSpriteset().GetCameraOffsetY();
+
+			auto b = Bitmap::Create(320, 240);
+			Bitmap& intermediateDst = *b; // dst
+			// Get map properties.
+			int yaw = Game_Battle::GetSpriteset().GetCameraAngle(); // 180:
+			int slant = 60;
+			int horizon = 20;
+
+
+			// Rotate.
+			double angle = (yaw * (2 * M_PI) / 360);
+			int rotationOX = fg_bitmap->GetWidth() / 2;
+			int rotationOY = fg_bitmap->GetHeight() / 2;
+
+			int rx = rotationOX;// Game_Battle::GetSpriteset().GetCameraOffsetX(); // rotationOX
+			int ry = rotationOY + 4; //Game_Battle::GetSpriteset().GetCameraOffsetY(); // rotationOY + 4
+
+			intermediateDst.RotateZoomOpacityBlit(rx, ry, rotationOX, rotationOY,
+				*fg_bitmap, fg_bitmap->GetRect(), angle, 1, 1, Opacity::Opaque());
+			//fg_bitmap.get()->RotateZoomOpacityBlit(rx, ry, rotationOX, rotationOY,
+			//	intermediateDst, intermediateDst.GetRect(), angle, 1, 1, Opacity::Opaque());
+			// 
+			// Draw line by line.
+			const int scrW = Player::screen_width;
+			const int scrH = Player::screen_height * 2;
+			const int half_scrW = scrW / 2;
+			const int half_scrH = scrH / 2;
+			const int horscan = horizon * 2;
+			int baseline = half_scrH + 4;
+			double scale = 200; // 200
+			double distance, zoom;
+			double iConst = 1 + (slant / (baseline + horizon));
+			double distanceBase = slant * scale / (baseline + horizon);
+			double syBase = 128 + distanceBase * 2;
+			int d3_2 = distanceBase * 2 / 3;
+
+			for (int ly = horscan; ly < scrH; ly++) {
+				distance = (slant * scale) / (ly + horizon);
+				zoom = iConst - (distance / scale);
+				if (zoom > 0.001) {
+					int li = ly - horscan;
+					int opacity = zoom * zoom * 1024;
+					if (ly <= d3_2 * 4) {
+						opacity = (ly - d3_2*3) * 255 / d3_2;
+					}
+					//
+					int sy = syBase - distance * 2;
+					int scaledWidth = intermediateDst.GetWidth() * zoom * 4.0; // 4
+					int displace = (scrW - scaledWidth) / 2;
+					Rect srcRect = Rect(0, sy, intermediateDst.GetWidth(), 1);
+					Rect dstRect = Rect(displace - dx, ly - dy, scaledWidth, 1);
+					dst.StretchBlit(dstRect, intermediateDst, srcRect, opacity, Bitmap::BlendMode::Normal);
+				}
+			}
+
+		}
+		else {
+			dst.TiledBlit(-Scale(fg_x), -Scale(fg_y), fg_bitmap->GetRect(), *fg_bitmap, dst_rect, 255);
+		}
+	}
+		
 	if (tone_effect != Tone()) {
 		dst.ToneBlit(0, 0, dst, dst.GetRect(), tone_effect, Opacity::Opaque());
 	}

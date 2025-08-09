@@ -29,6 +29,9 @@
 #include "scene.h"
 #include "drawable_mgr.h"
 #include "sprite_picture.h"
+#include <game_battle.h>
+#include "spriteset_battle.h"
+#include <battle_camera.h>
 
 static bool IsEmpty(const lcf::rpg::SavePicture& data, int frames) {
 	lcf::rpg::SavePicture empty;

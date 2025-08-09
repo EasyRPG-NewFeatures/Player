@@ -24,6 +24,9 @@
 #include "game_windows.h"
 #include "player.h"
 #include "bitmap.h"
+#include "spriteset_battle.h"
+#include <output.h>
+#include <battle_camera.h>
 
 Sprite_Picture::Sprite_Picture(int pic_id, Drawable::Flags flags)
 	: Sprite(flags),
@@ -105,12 +108,21 @@ void Sprite_Picture::Draw(Bitmap& dst) {
 		y -= Main_Data::game_screen->GetShakeOffsetY();
 	}
 
+	float offX = 0;
+	float offY = 0;
+
+	if (data.fixed_to_map && Battle_Camera::GetCameraType() != 0 && data.battle_layer > 0) {
+		offX = Game_Battle::GetSpriteset().GetCameraOffsetX();
+		offY = Game_Battle::GetSpriteset().GetCameraOffsetY();
+
+	}
+
 	if (Player::game_config.fake_resolution.Get()) {
-		SetX(x + Player::menu_offset_x);
-		SetY(y + Player::menu_offset_y);
+		SetX(x + Player::menu_offset_x - offX);
+		SetY(y + Player::menu_offset_y - offY);
 	} else {
-		SetX(x);
-		SetY(y);
+		SetX(x - offX);
+		SetY(y - offY);
 	}
 	SetZoomX(data.current_magnify / 100.0);
 	SetZoomY(data.current_magnify / 100.0);
